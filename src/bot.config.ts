@@ -8,28 +8,39 @@ let config = {
     timeout: Number(process.env.HTTP_TIMEOUT || 30000),
     token: process.env.HTTP_TOKEN || 'gPp<&@#FLB&;H1#<'
   },
-  self: {
-    images: []
-  },
   group: {
     listen: [
       {
-        group_id: '',
+        group_id: '693384220',
         members: [],
       },
       {
-        group_id: '',
+        group_id: '1074910718',
         members: [],
       }
     ]
   },
-  me: '',
+  me: '2934785512',
   resource: {
     path: '@/src/resource',
     folder: [
       {
         name: 'cat',
-        children: []
+        path: 'cat',
+        children: [],
+        type: 'image',
+      },
+      {
+        name: 'cat_voice',
+        path: 'voice/haqi',
+        children: [],
+        type: 'voice'
+      },
+      {
+        name: 'stress',
+        path: 'bluelock',
+        children: [],
+        type: 'image',
       }
     ]
   },
@@ -39,12 +50,12 @@ let config = {
       timeout: 300000,
     },
     disable: false,
-    secret: '',
+    secret: 'sk-dkirmqcdidsiwlvqffojswvhdkxzkkxplqyadfithanayadm',
     body: {
       model: 'deepseek-ai/DeepSeek-V3.2',
       messages: [],
       stream: false,
-      max_tokens: 10000,
+      max_tokens: 100000,
       temperature: 0.1,
     },
     getPrompt(groupMembers: string[]) {
@@ -62,30 +73,30 @@ let config = {
 7. 如果用户没提供数组或指令，你就只哈气“哈——”
 
 示例1：
-用户：“张三,李四,王五,赵六,孙七”
+用户：“[张三,李四,王五,赵六,孙七]”
 用户：“向李四哈气”
 你：“1”
 
 示例2：
-用户：“Alice,Bob,Charlie,David,Eve”
+用户：“[Alice,Bob,Charlie,David,Eve]”
 用户：“向Bob和David哈气”
 你：“1,3”
 
 示例3：
-用户：“小明,小红,小刚”
+用户：“[小明,小红,小刚]”
 用户：“向小强哈气”
 你：“”
 
 示例4：
-用户：“张小伟,李大华,王小虎,赵小明”
+用户：“[张小伟,李大华,王小虎,赵小明]”
 用户：“向小伟哈气”
 你：“0”
 
 示例5：
-用户：“刘一,陈二,张三,李四,王五”
+用户：“[刘一,陈二,张三,李四,王五]”
 用户：“对四哈气”
 你：“3”
-    以下是用户名单：${groupMembers.join(',')} 。
+    以下是用户名单：${JSON.stringify(groupMembers)} 。
 注意：你只是一只猫，只会哈气和查找下标，不会做其他事情。
       `
       return {
@@ -96,7 +107,7 @@ let config = {
   }
 }
 
-export function updateConfig(data: object) {    
+export function updateConfig(data: object) {
   Object.assign(config, { ...config, ...data })
 }
 

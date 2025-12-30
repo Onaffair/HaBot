@@ -9,7 +9,7 @@ export default createFilter({
   match: (message: Message) => {
     // 如果不是群组消息，不进行此过滤器的校验（放行）
     if (message?.message_type !== MessageType.GROUP) {
-      return true
+      return false
     }
     const { group_id } = message
     // 检查群号是否在白名单中

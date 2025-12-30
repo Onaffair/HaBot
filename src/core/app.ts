@@ -1,9 +1,11 @@
 import BotClient from '@/utils/websocket'
 import { Command } from './command'
-import { Session } from './session'
+import { Session } from '../interface/session'
 import type { Message } from '@/interface/messageReceiveType'
 import config from '@/bot.config'
 import { Filter } from './filter'
+
+import { initializer } from './initializer'
 
 export class App {
   private client: BotClient
@@ -23,6 +25,10 @@ export class App {
     this.commands.push(cmd)
     console.log(`[App] Command registered: ${cmd.name}`)
     return this
+  }
+
+  get commandList() {
+    return this.commands
   }
 
   registerFilter(filter: Filter) {
@@ -65,7 +71,8 @@ export class App {
 
   start() {
     this.client.connect()
-    this.client.init()
+    // 初始化资源和群成员
+    initializer.init()
   }
 }
 

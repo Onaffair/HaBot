@@ -1,10 +1,7 @@
-import fs from 'fs'
-import path from 'path'
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
-import config, { updateConfig } from '@/bot.config'
+import config from '@/bot.config'
 import type { Message } from '@/interface/messageReceiveType'
-import { getGourpMembers, getImage } from '@/api'
 
 export default class BotClient extends EventEmitter {
   private readonly url: string
@@ -41,6 +38,7 @@ export default class BotClient extends EventEmitter {
     this.ws = new WebSocket(fullUrl)
 
     this.ws.on('open', () => {
+      console.log('[Bot] WebSocket connected')
       this.reconnectAttempts = 0
       this.emit('system.online')
       this.startHeartbeat()
@@ -74,73 +72,6 @@ export default class BotClient extends EventEmitter {
         this.heartbeatTimeoutTimer = null
       }
     })
-  }
-
-  async initImage() {
-    const images: string[] = []
-
-    // 解析资源配置
-    const { resource } = config
-    if (resource && resource.path && resource.folder) {
-      // 解析根路径：处理 @ 别名
-      let basePath = resource.path
-      if (basePath.startsWith('@/')) {
-        basePath = path.join(process.cwd(), basePath.replace('@/', ''))
-      } else {
-        basePath = path.resolve(process.cwd(), basePath)
-      }
-
-      // 遍历配置的文件夹
-      for (const folder of resource.folder) {
-        const folderPath = path.join(basePath, folder.name)
-        if (fs.existsSync(folderPath)) {
-          const files = fs.readdirSync(folderPath)
-          for (const file of files) {
-            // 简单的图片过滤
-            if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file)) {
-              images.push(path.join(folderPath, file))
-            }
-          }
-        }
-      }
-    }
-
-    updateConfig({
-      self: {
-        images
-      }
-    })
-    console.log(`[Bot] Loaded ${images.length} local images`)
-  }
-
-  async initGroupMembers() {
-    const { group } = config
-    const reqList = []
-    group.listen.forEach(item => {
-      const res = getGourpMembers(item.group_id).then(res => {
-        item.members = [...res.data]
-      })
-      reqList.push(res)
-    })
-    await Promise.all(reqList)
-
-    group.listen.forEach(gp => {
-      gp.members.forEach((item) => {
-        // console.log(item.nickname, item.card);
-
-        if (item?.card?.trim() !== '') {
-          console.log(item.card);
-        } else {
-          console.log(item?.nickname);
-
-        }
-      })
-    })
-
-  }
-  async init() {
-    this.initImage()
-    this.initGroupMembers()
   }
 
   private startHeartbeat() {

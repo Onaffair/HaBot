@@ -1,9 +1,9 @@
 export interface MessageItemType {
-  type: 'text' | 'image' | 'at',
+  type: 'text' | 'image' | 'at' | 'record',
   data: {
     text?: string,
     file?: string,
-    qq?: string
+    qq?: string,
   }
 }
 export interface MessageSendType{

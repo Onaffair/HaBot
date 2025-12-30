@@ -6,8 +6,12 @@ export default createFilter({
   name: '艾特',
   match: (message: Message) => {
     // 私聊消息直接通过
-    if (message.message_type === 'private') return true
-
+    if (message.message_type === 'private') {
+      console.log("privateMsg",message.message);
+      
+      return false
+    }
+    
     // 群聊消息需要 @ 机器人或者 @ 全体
     if (message.message_type === 'group') {
       const msgList = message.message || []

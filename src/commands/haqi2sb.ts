@@ -1,14 +1,14 @@
 import { chatWithAI } from "@/api/ai";
 import config from "@/bot.config";
 import { createCommand } from "@/core/command";
-import { Session } from "@/core/session";
+import { Session } from "@/interface/session";
 import { MessageItemType, MessageSendType } from "@/interface/MessageSendType";
 import { getRandomImage } from "@/utils/message";
 
 
 
 export default createCommand({
-  name: '对某人哈气',
+  name: '对/向**哈气',
   match: (session) => {
     const reg = /[对|向].*哈气/
     return reg.test(session.textContent)
@@ -18,31 +18,22 @@ export default createCommand({
     let haList = []
     const reg = /[对向](.+?)哈气/;
     const match = session.textContent.match(reg);
-    const groupMembers = config.group.listen
-      .find(item => item.group_id == session.raw.group_id.toString())
-      ?.members?.map(item => {
-        if (item.nickname !== '') {
-          return item?.nickname
-        } else {
-          return item?.card
-        }
-      })
-    if (match) {
-      const target = match[1];
-      const targetIndex = groupMembers.findIndex(item => item.includes(target))
-      if (targetIndex) {
-        haList = [
-          targetIndex
-        ]
-      }
+    const groupMembers = session.groupMemberNames
+    const target = match[1];
+    const regIndex = groupMembers.findIndex(item => item.includes(target))
+    console.log("regIndex", regIndex);
+    if (regIndex >= 0) {
+      haList = [
+        regIndex
+      ]
     } else {
       const res = await chatWithAI(session) as any
       haList = res?.choices[0]?.message?.content?.split(',').map(item => {
         const index = Number(item?.trim())
         return index
       }).filter(item => !isNaN(item))
+      console.log("aiIndex", haList);
     }
-
     console.log("哈气列表", haList);
 
     if (!haList) return

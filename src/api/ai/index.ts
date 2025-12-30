@@ -1,5 +1,5 @@
 import config from "@/bot.config";
-import { Session } from "@/core/session";
+import { Session } from "@/interface/session";
 import aiReq from "@/utils/aiRequest";
 
 
@@ -55,16 +55,8 @@ async function sendAImessage(data: any) {
 }
 export async function chatWithAI(session: Session) {
   const body = JSON.parse(JSON.stringify(ai.body))
-  const groupMembers = config.group.listen
-    .find(item => item.group_id == session.raw.group_id.toString())
-    ?.members?.map(item => {
-      if (item?.card?.trim() !== '') {
-        return item?.card
-      } else {
-        return item?.nickname
-      }
-    })
-
+  const groupMembers = session.groupMemberNames
+    
   const prompt = ai.getPrompt(groupMembers)
   body.messages.push(prompt)
   const userMsg = {

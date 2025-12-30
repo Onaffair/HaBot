@@ -6,5 +6,5 @@ import toMe from "./toMe";
 
 export default [
   targetGroup,
-  toMe
+  // toMe
 ]

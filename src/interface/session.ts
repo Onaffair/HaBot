@@ -1,6 +1,7 @@
 import type { Message } from '@/interface/messageReceiveType'
 import { postMessage } from '@/api'
 import { MessageItemType, MessageSendType } from '@/interface/MessageSendType'
+import config from '@/bot.config'
 
 export class Session {
   raw: Message
@@ -10,11 +11,23 @@ export class Session {
   }
 
   get userId() {
-    return this.raw.sender?.user_id
+    return this.raw.sender?.user_id.toString()
   }
 
   get groupId() {
     return this.raw.group_id
+  }
+
+  get groupMemberNames() {
+    if (!this.groupId) return []
+    const group = config.group.listen.find(item => item.group_id === this.groupId?.toString())
+    return group?.members?.map(item => {
+      if (item?.card?.trim() !== '') {
+        return item?.card
+      } else {
+        return item?.nickname
+      }
+    }) || []
   }
 
   get message() {
@@ -34,7 +47,7 @@ export class Session {
   }
 
   async sendMessage(payload:MessageSendType){
-      await postMessage(payload)
+    return await postMessage(payload)
   }
 
 
