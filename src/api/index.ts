@@ -17,13 +17,25 @@ export function postMessage(data: any) {
   })
 }
 
-export function getGourpMembers(groupId: string | number){
+export function getGourpMembers(groupId: string | number) {
   return request({
     url: '/get_group_member_list',
     method: 'post',
     params: {
       group_id: groupId,
       nocache: false
+    }
+  })
+}
+
+
+export function getGroupMessage(group_id: number) {
+  return request({
+    url: '/get_group_msg_history',
+    method: 'post',
+    data: {
+      group_id,
+      count:100
     }
   })
 }

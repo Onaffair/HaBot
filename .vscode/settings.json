@@ -1,0 +1,8 @@
+{
+  // 增加控制台输出限制
+  "terminal.integrated.scrollback": 10000,
+  // 对于调试控制台
+  "debug.console.collapseIdenticalLines": false,
+  "debug.console.wordWrap": true,
+  // 或者使用 launch.json 配置
+}

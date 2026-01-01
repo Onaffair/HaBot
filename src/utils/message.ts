@@ -1,7 +1,8 @@
 import config from "@/bot.config";
 import { MessageItemType, MessageSendType } from "@/interface/MessageSendType";
+import { Session } from "@/interface/session";
 
-export function getRandomImage(name: string = 'cat'): MessageItemType {
+export function makeRandomImage(name: string = 'cat'): MessageItemType {
   const msg = {} as MessageItemType
   msg.type = 'image'
 
@@ -22,7 +23,7 @@ export function getRandomImage(name: string = 'cat'): MessageItemType {
   return msg
 }
 
-export function getRandomVoice() {
+export function makeRandomVoice() {
   const msg = {} as MessageItemType
   msg.type = 'record'
 
@@ -42,7 +43,7 @@ export function getRandomVoice() {
 
   return msg
 }
-export function getText(text: string): MessageItemType {
+export function makeTextMsg(text: string): MessageItemType {
   const msg = {} as MessageItemType
   msg.type = 'text'
   msg.data = {
@@ -51,8 +52,16 @@ export function getText(text: string): MessageItemType {
   return msg
 }
 
+export function makeReplyMsg(id:string){
+  const msg  = {} as MessageItemType
+  msg.type = 'reply'
+  msg.data = {
+    id
+  }
+  return msg
+}
 
-export function getAt(qq: string): MessageItemType {
+export function makeAtMsg(qq: string): MessageItemType {
   const msg = {} as MessageItemType
   msg.type = 'at'
   msg.data = {
@@ -61,7 +70,14 @@ export function getAt(qq: string): MessageItemType {
   return msg
 }
 
-export function getMessage(): MessageSendType {
+export function makeMessageInstance(): MessageSendType {
   return { message: [] } as MessageSendType
 }
+
+export function judgeIsAtMe(session:Session){
+  return session.message.some(m => m?.type === 'at' && m?.data?.qq === config.me)
+}
+
+
+
 

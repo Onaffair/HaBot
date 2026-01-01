@@ -54,10 +54,10 @@ export class App {
 
     // 2. 命令层执行
     const session = new Session(data)
-    
+
     // 遍历命令进行匹配
     for (const cmd of this.commands) {
-      if (cmd.match(session)) {
+      if (await cmd.match(session)) {
         console.log(`[App] Match command: ${cmd.name}`)
         try {
           await cmd.handle(session)

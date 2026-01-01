@@ -1,9 +1,9 @@
-import { chatWithAI } from "@/api/ai";
+import { findTargetPersonByAI } from "@/api/ai";
 import config from "@/bot.config";
 import { createCommand } from "@/core/command";
 import { Session } from "@/interface/session";
-import { MessageItemType, MessageSendType } from "@/interface/MessageSendType";
-import { getRandomImage } from "@/utils/message";
+import { getMessageSendTypeInstance, MessageItemType, MessageSendType } from "@/interface/MessageSendType";
+import { makeRandomImage } from "@/utils/message";
 
 
 
@@ -19,16 +19,15 @@ export default createCommand({
     const reg = /[对向](.+?)哈气/;
     const match = session.textContent.match(reg);
     const groupMembers = session.groupMemberNames
-    const target = match[1];
-    const regIndex = groupMembers.findIndex(item => item.includes(target))
-    console.log("regIndex", regIndex);
-    if (regIndex >= 0) {
-      haList = [
-        regIndex
-      ]
+    const matched = match[1];
+    const matchedArr = matched.split(/[,，和与]/g)
+
+    const targetArr = groupMembers.filter(item => matchedArr.includes(item))
+    if (targetArr.length >= 0) {
+      haList = targetArr
     } else {
-      const res = await chatWithAI(session) as any
-      haList = res?.choices[0]?.message?.content?.split(',').map(item => {
+      const res = await findTargetPersonByAI(session) as any
+      haList = res.split(',').map(item => {
         const index = Number(item?.trim())
         return index
       }).filter(item => !isNaN(item))
@@ -37,8 +36,7 @@ export default createCommand({
     console.log("哈气列表", haList);
 
     if (!haList) return
-    const msg = {} as MessageSendType
-    msg.group_id = session.groupId.toString()
+    const msg = getMessageSendTypeInstance(session)
     const members = config.group.listen.find(item => item.group_id == msg.group_id).members
 
     msg.message = haList.map(index => {
@@ -49,9 +47,10 @@ export default createCommand({
     if (!msg?.message?.length) {
       return
     }
-    msg.message.push(getRandomImage())
+    msg.message.push(makeRandomImage())
 
     await session.sendMessage(msg)
   },
   description: '对某人哈气',
+  priority: 10
 })

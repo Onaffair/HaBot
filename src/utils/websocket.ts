@@ -2,6 +2,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import config from '@/bot.config'
 import type { Message } from '@/interface/messageReceiveType'
+import { log } from 'console'
 
 export default class BotClient extends EventEmitter {
   private readonly url: string
@@ -36,7 +37,8 @@ export default class BotClient extends EventEmitter {
   connect(): void {
     const fullUrl = this.token ? `${this.url}?access_token=${this.token}` : this.url
     this.ws = new WebSocket(fullUrl)
-
+    console.log("startConnect to Server");
+    
     this.ws.on('open', () => {
       console.log('[Bot] WebSocket connected')
       this.reconnectAttempts = 0
@@ -57,11 +59,15 @@ export default class BotClient extends EventEmitter {
     })
 
     this.ws.on('close', () => {
+      console.log("[Bot] WebSocket disconnected");
+      
       this.stopHeartbeat()
       this.scheduleReconnect()
     })
 
     this.ws.on('error', (err: Error) => {
+      console.log("wsError: ",err);
+      
       this.stopHeartbeat()
       this.scheduleReconnect()
     })

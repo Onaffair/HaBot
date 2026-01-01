@@ -15,7 +15,7 @@ request.interceptors.response.use(
   res => {
     return res.data
   },
-  err => Promise.reject(err)
+  err => Promise.reject(err.message)
 )
 
 export default request

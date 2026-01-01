@@ -41,7 +41,7 @@ export class Session {
   get textContent() {
     return this.raw.message
       ?.filter(item => item.type === 'text')
-      .map(item => item.data?.text)
+      .map(item => item?.data?.text || '')
       .join('')
       .trim() || ''
   }

@@ -1,4 +1,4 @@
-import { chatWithAI } from ".";
+import { findTargetPersonByAI } from ".";
 
 
 const res = {
@@ -27,6 +27,6 @@ const res = {
   "system_fingerprint": ""
 }
 
-chatWithAI()
+findTargetPersonByAI()
 
 
