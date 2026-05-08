@@ -2,12 +2,14 @@
   "compilerOptions": {
     "target": "ES2019",
     "module": "CommonJS",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/bot/*"],
+      "@config": ["src/bot.config.ts"],
+      "@utils/*": ["src/utils/*"]
     },
     "strict": false,
     "esModuleInterop": true,
@@ -15,6 +17,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src", "src/bot/api"],
+  "exclude": ["node_modules", "dist","test.js"]
 }

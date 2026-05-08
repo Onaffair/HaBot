@@ -1,6 +1,17 @@
+import 'dotenv/config'
+import { createLogger } from '@utils/logger'
 
-import dotenv from 'dotenv'
-dotenv.config()
+const logger = createLogger('Config')
+
+function parseJSON<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback
+  try {
+    return JSON.parse(value)
+  } catch {
+    logger.error('Failed to parse JSON config')
+    return fallback
+  }
+}
 
 let config = {
   ws: {
@@ -13,58 +24,31 @@ let config = {
     token: process.env.HTTP_TOKEN || ''
   },
   group: {
-    listen: (process.env.GROUP_LISTEN_IDS || '').split(',').filter(Boolean).map(id => ({
-      group_id: id,
+    listen: process.env.GROUP_LISTEN.split(',').map(t => ({
+      group_id: t,
       members: []
     }))
   },
-  me: process.env.BOT_ME || '2934785512',
+  me: process.env.ME || '2934785512',
   resource: {
     path: process.env.RESOURCE_PATH || '@/src/resource',
-    folder: [
-      {
-        name: 'cat',
-        path: 'cat',
-        children: [],
-        type: 'image',
-      },
-      {
-        name: 'cat_voice',
-        path: 'voice/haqi',
-        children: [],
-        type: 'voice'
-      },
-      {
-        name: 'stress',
-        path: 'bluelock',
-        children: [],
-        type: 'image',
-      }
-    ]
+    folder: parseJSON(process.env.RESOURCE_FOLDER, [] as { name: string; path: string; type: string; children?: string[] }[])
   },
-  ai: {
-    config: {
-      baseURL: process.env.AI_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
-      timeout: Number(process.env.AI_API_TIMEOUT || 300000),
-    },
-    disable: false,
-    secret: process.env.AI_API_KEY || '',
-    body: {
-      model: process.env.AI_MODEL || 'zai-org/GLM-4.6V',
-      messages: [],
-      stream: false,
-      max_tokens: Number(process.env.AI_MAX_TOKENS || 10000),
-      temperature: Number(process.env.AI_TEMPERATURE || 0.2),
-      response_format: {
-        type: 'text'
-      }
-    },
-  }
+  ai: parseJSON(process.env.AI_CONFIG, [] as any[]),
+  oss: {
+    region: process.env.OSS_REGION || 'oss-cn-hangzhou',
+    accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
+    accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET || '',
+    bucket: process.env.OSS_BUCKET || ''
+  },
+  database: {
+    url: process.env.DATABASE_URL || ''
+  },
+  BG: [] as string[]
 }
 
-export function updateConfig(data: object) {
-  Object.assign(config, { ...config, ...data })
+export function updateConfig(data: Record<string, any>) {
+  Object.assign(config, data)
 }
 
 export default config
-
