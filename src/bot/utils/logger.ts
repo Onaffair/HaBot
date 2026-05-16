@@ -41,7 +41,6 @@ export class Logger {
     try {
       fs.appendFileSync(this.logFile, text + '\n')
     } catch (e) {
-      // Avoid infinite loop if logging fails
       process.stderr.write(`Failed to write to log file: ${e}\n`)
     }
   }

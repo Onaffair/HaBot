@@ -9,7 +9,7 @@
     "paths": {
       "@/*": ["src/bot/*"],
       "@config": ["src/bot.config.ts"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/bot/utils/*"]
     },
     "strict": false,
     "esModuleInterop": true,

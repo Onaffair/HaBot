@@ -1,10 +1,8 @@
 import { Command, createCommand } from "@/core/command";
-import { Session } from "@/interface/session";
-import { getMessageSendTypeInstance } from "@/interface/MessageSendType";
 import { makeAtMsg, makeRandomImage, makeTextMsg, makeRandomVoice } from "@/utils/message";
 import { createLogger } from "@utils/logger";
 import config from '@config';
-import { genshinArr, mcArr, starTrailArr } from "@/config";
+import { genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
 
 const logger = createLogger('Reactions');
 
@@ -17,14 +15,11 @@ const strategies: Command[] = [
       return genshinArr.some(item => session.textContent.includes(item))
     },
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
-      const imgKey = session.textContent.includes('原神') ? '原神' : 'mc';
       const imageMsg = makeRandomImage('原神');
       if (!imageMsg) return;
 
-      msg.message.push(imageMsg);
       logger.info(`[genshin/Mc] Sending image: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [imageMsg]
     }
   },
   {
@@ -34,12 +29,23 @@ const strategies: Command[] = [
       return mcArr.some(item => session.textContent.includes(item))
     },
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
       const imageMsg = makeRandomImage('mc');
       if (!imageMsg) return;
-      msg.message.push(imageMsg);
       logger.info(`[genshin/Mc] Sending image: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [imageMsg]
+    }
+  },
+  {
+    name:'yys',
+    description:'阴阳师',
+    match: (session) => {
+      return yysArr.some(item => session.textContent.includes(item))
+    },
+    handle: async (session) => {
+      const imageMsg = makeRandomImage('yys');
+      if (!imageMsg) return;
+      logger.info(`[yys] Sending image: ${imageMsg.data.file}`);
+      return [imageMsg]
     }
   },
   {
@@ -49,12 +55,10 @@ const strategies: Command[] = [
       return starTrailArr.some(item => session.textContent.includes(item))
     },
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
       const imageMsg = makeRandomImage('星铁');
       if (!imageMsg) return;
-      msg.message.push(imageMsg);
       logger.info(`[genshin/Mc] Sending image: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [imageMsg]
     }
   },
   {
@@ -63,39 +67,32 @@ const strategies: Command[] = [
     priority: 9,
     match: (session) => session.textContent === '哈气',
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
-      const imageMsg = makeRandomImage(); // Defaults to 'cat'
+      const imageMsg = makeRandomImage();
       if (!imageMsg) return;
 
-      msg.message.push(imageMsg);
       logger.info(`[哈气] Sending image: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [imageMsg]
     }
   },
-  {
-    name: '天籁之音',
-    description: '发送‘云烟姐姐的天籁之音’可以聆听',
-    match: (session) => session.textContent === '云烟姐姐的天籁之音',
-    handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
-      const voiceMsg = makeRandomVoice('司云烟');
-      if (!voiceMsg) return;
-
-      msg.message.push(voiceMsg);
-      await session.sendMessage(msg);
-    }
-  },
+  // {
+  //   name: '天籁之音',
+  //   description: '发送‘云烟姐姐的天籁之音’可以聆听',
+  //   match: (session) => session.textContent === '云烟姐姐的天籁之音',
+  //   handle: async (session) => {
+  //     const voiceMsg = makeRandomVoice('司云烟');
+  //     if (!voiceMsg) return;
+  //     return [voiceMsg]
+  //   }
+  // },
   {
     name: '哈个气',
     description: '发送哈个气可以让耄耋语音哈气',
     match: (session) => session.textContent === '哈个气',
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
-      const voiceMsg = makeRandomVoice(); // Defaults to 'cat_voice'
+      const voiceMsg = makeRandomVoice();
       if (!voiceMsg) return;
 
-      msg.message.push(voiceMsg);
-      await session.sendMessage(msg);
+      return [voiceMsg]
     }
   },
   {
@@ -104,7 +101,6 @@ const strategies: Command[] = [
     priority: 0,
     match: (session) => session.textContent.includes('哈气'),
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
       const imageMsg = makeRandomImage('stress');
       if (!imageMsg) return;
 
@@ -112,10 +108,8 @@ const strategies: Command[] = [
       const atMsg = makeAtMsg(sender);
       const stressMsg = makeTextMsg(`\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？`);
 
-      msg.message = [atMsg, stressMsg, imageMsg];
-
       logger.info(`[Stress] Sending image: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [atMsg, stressMsg, imageMsg]
     }
   },
   {
@@ -125,16 +119,14 @@ const strategies: Command[] = [
       return config.resource?.folder?.some(f => session.textContent.includes(f.name)) ?? false
     },
     handle: async (session) => {
-      const msg = getMessageSendTypeInstance(session);
       const folder = config.resource.folder.find(f => session.textContent.includes(f.name));
       if (!folder) return;
 
       const imageMsg = makeRandomImage(folder.name);
       if (!imageMsg) return;
 
-      msg.message.push(imageMsg);
       logger.info(`[KeywordReaction] Sending image for ${folder.name}: ${imageMsg.data.file}`);
-      await session.sendMessage(msg);
+      return [imageMsg]
     }
   }
 ];

@@ -1,7 +1,6 @@
 import { createCommand } from '@/core/command'
 import { app } from '@/core/app'
 import { makeTextMsg } from '@/utils/message'
-import { getMessageSendTypeInstance, MessageSendType } from '@/interface/MessageSendType'
 
 export default createCommand({
   name: '指令集',
@@ -13,13 +12,6 @@ export default createCommand({
       return `【${cmd.name}】 ${cmd.description || ''}`
     }).join('\n')
 
-    const msg = getMessageSendTypeInstance(session)
-    if (session.groupId) {
-      msg.group_id = session.groupId.toString()
-    }
-
-    msg.message = [makeTextMsg(`当前可用指令：\n${helpText}`)]
-
-    await session.sendMessage(msg)
+    return [makeTextMsg(`当前可用指令：\n${helpText}`)]
   }
 })

@@ -1,7 +1,7 @@
 import { getGroupMessage } from "@/api";
 import { concludePersonByAI } from "@/api/ai/LLM";
 import { createCommand } from "@/core/command";
-import { getMessageSendTypeInstance, GroupUserInfoType } from "@/interface/MessageSendType";
+import { GroupUserInfoType } from "@/interface/MessageSendType";
 import { makeTextMsg } from "@/utils/message";
 import config from "@config";
 import { createLogger } from "@utils/logger";
@@ -15,7 +15,6 @@ export default createCommand({
   },
   name: '查成分',
   handle: async (session) => {
-    const msg = getMessageSendTypeInstance(session)
     const match = reg.exec(session.textContent)
     console.log(match);
 
@@ -37,8 +36,7 @@ export default createCommand({
       return
     }
     res = res.replace(/[<|begin_of_box|> | <|end_of_box|>]/g, "").trim()
-    msg.message.push(makeTextMsg(res))
-    await session.sendMessage(msg)
+    return [makeTextMsg(res)]
   },
   description: '查一个人的成分',
 })

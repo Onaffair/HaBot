@@ -1,6 +1,6 @@
-import config, { updateConfig } from '../bot.config'
-import { OSSService } from '../utils/OSS'
-import { createLogger } from '../utils/logger'
+import config, { updateConfig } from '@config'
+import { OSSService } from '@utils/OSS'
+import { createLogger } from '@utils/logger'
 
 const logger = createLogger('Scheduler')
 const oss = new OSSService()

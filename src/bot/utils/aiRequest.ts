@@ -27,11 +27,11 @@ export function createAIRequest(name?: string) {
   })
   aiReq.interceptors.response.use(
     res => {
-      logger.info(res.data?.msg || res.data)
+      logger.info(JSON.stringify(res.data?.msg || res.data))
       return res.data
     },
     err => {
-      logger.error(err?.data || err)
+      logger.error("req error: ",err)
       return Promise.reject(err.data)
     }
   )

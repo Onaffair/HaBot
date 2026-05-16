@@ -93,7 +93,6 @@ export class OSSService {
       return []
     }
     try {
-      // Ensure prefix ends with /
       const p = prefix.endsWith('/') ? prefix : `${prefix}/`
       const result = await this.client.list({
         prefix: p,
@@ -101,7 +100,6 @@ export class OSSService {
         'max-keys': 1000
       }, {})
       
-      // result.prefixes contains the directories (common prefixes)
       return result.prefixes || []
     } catch (e) {
       logger.error(`List directories failed: ${prefix}`, e)
@@ -109,28 +107,22 @@ export class OSSService {
     }
   }
 
-  /**
-   * 获取指定目录下的所有文件 URL（扁平化，不包含子目录）
-   * @param dirPrefix 目录前缀，例如 "ZIP/cat/"
-   */
   async getDirFiles(dirPrefix: string): Promise<string[]> {
     if (!this.initialized) {
       logger.error('OSS not initialized')
       return []
     }
     try {
-      // 确保前缀以 / 结尾（如果非空）
       const prefix = dirPrefix && !dirPrefix.endsWith('/') ? `${dirPrefix}/` : dirPrefix
       
       const result = await this.client.list({
         prefix,
-        'max-keys': 1000 // 假设单目录不超过 1000 个文件，如果更多需要分页处理
+        'max-keys': 1000
       }, {})
 
       if (!result.objects || result.objects.length === 0) {
         return []
       }
-      // 过滤掉目录本身（以 / 结尾的对象）并返回 URL
       return result.objects
         .filter(obj => !obj.name.endsWith('/'))
         .map(obj => obj.url)

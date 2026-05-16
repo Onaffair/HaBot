@@ -1,8 +1,7 @@
 import { findTargetPersonByAI } from "@/api/ai/LLM";
 import config from '@config';
 import { createCommand } from "@/core/command";
-import { Session } from "@/interface/session";
-import { getMessageSendTypeInstance, MessageItemType, MessageSendType } from "@/interface/MessageSendType";
+import { MessageItemType } from "@/interface/MessageSendType";
 import { makeRandomImage } from "@/utils/message";
 import { createLogger } from '@utils/logger'
 
@@ -15,7 +14,7 @@ export default createCommand({
     return reg.test(session.textContent)
   },
   handle: async (session) => {
-    let haList = []
+    let haList: number[] = []
     const reg = /[对向](.+?)哈气/;
     const match = session.textContent.match(reg);
     const groupMembers = session.groupMemberNames
@@ -35,20 +34,15 @@ export default createCommand({
       logger.info("aiTarget", haList);
     }
     logger.info("哈气列表", haList);
-    if (!haList) return
-    const msg = getMessageSendTypeInstance(session)
-    const members = config.group.listen.find(item => item.group_id == msg.group_id).members
-    msg.message = haList.map(index => {
-      const item = { type: 'at', data: {} } as MessageItemType
+    if (!haList || haList.length === 0) return
+    const members = config.group.listen.find(item => item.group_id == session.groupId?.toString()).members
+    const atItems = haList.map(index => {
+      const item = { type: 'at' as const, data: {} } as MessageItemType
       item.data.qq = members?.[index]?.user_id || ''
       return item
-    })
-    if (!msg?.message?.length) {
-      return
-    }
-    msg.message.push(makeRandomImage())
-
-    await session.sendMessage(msg)
+    }).filter(item => item.data.qq)
+    if (!atItems.length) return
+    return [...atItems, makeRandomImage()]
   },
   description: '对某人哈气',
   priority: 10

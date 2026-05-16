@@ -19,13 +19,11 @@ export async function generateImageByAI(message: MessageItemType[], option?: any
   try {
     const res = await sendAImessage(body, 'image-generator')
     return res?.data?.[0]
-
   } catch (e) {
     console.log("imageErr", e?.message);
     return ''
   }
 }
-
 
 
 

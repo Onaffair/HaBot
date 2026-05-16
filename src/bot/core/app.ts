@@ -7,6 +7,7 @@ import { Filter } from './filter'
 
 import { initializer } from './initializer'
 import { createLogger } from '@utils/logger'
+import { getMessageSendTypeInstance, MessageItemType } from '@/interface/MessageSendType'
 
 const logger = createLogger('App')
 
@@ -56,13 +57,19 @@ export class App {
 
     // 2. 命令层执行
     const session = new Session(data)
-
+    
     // 遍历命令进行匹配
     for (const cmd of this.commands) {
       if (await cmd.match(session)) {
         logger.info(`Match command: ${cmd.name}`)
+
         try {
-          await cmd.handle(session)
+          const msg = getMessageSendTypeInstance(session)
+
+          const res = await cmd.handle(session)
+          if (res == undefined || !res) return
+          msg.message.push(...res)
+          await session.sendMessage(msg)
         } catch (e) {
           logger.error(`Command execution failed (${cmd.name}):`, e)
         }
