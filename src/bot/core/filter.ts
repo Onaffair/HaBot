@@ -6,5 +6,8 @@ export interface Filter{
   handle?:() => void,
   description?:string,
 }
-
-export const createFilter = (filter: Filter) => filter
+export const filters: Filter[] = []
+export const createFilter = (filter: Filter) => {
+  filters.push(filter)
+  return filter
+}

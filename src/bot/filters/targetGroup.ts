@@ -13,11 +13,11 @@ export default createFilter({
     if (message?.message_type !== MessageTypeEnum.GROUP) {
       return false
     }
+
     const { group_id } = message
     // 检查群号是否在白名单中
     // 适配新的 config.group.listen 结构（对象数组）
-    const isAllowed = config.group.listen.some(item => item.group_id === group_id?.toString())
-
+    const isAllowed = config.group.listen.some(item => item.group_id?.toString() === group_id?.toString())    
     if (group_id && isAllowed) {
       // logger.info(`Message from allowed group: ${group_id}`);
       return true

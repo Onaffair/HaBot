@@ -6,3 +6,6 @@ logs
 dist
 *.db
 */config.json
+src/resources/*
+.deepseek/*
+scripts/*

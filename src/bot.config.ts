@@ -1,54 +1,64 @@
-import 'dotenv/config'
-import { createLogger } from '@utils/logger'
+/**
+ * 应用配置容器。
+ * 初始为空 / 默认值，由 bootstrap.ts 调用 loadConfig() 从数据库填充。
+ * 运行时由 initializer / scheduler 通过 updateConfig() 动态更新。
+ */
 
-const logger = createLogger('Config')
-
-function parseJSON<T>(value: string | undefined, fallback: T): T {
-  if (!value) return fallback
-  try {
-    return JSON.parse(value)
-  } catch {
-    logger.error('Failed to parse JSON config')
-    return fallback
-  }
+interface Config {
+  ws?: {
+    url?: string;
+    token?: string;
+  };
+  http?: {
+    baseURL?: string;
+    timeout?: number;
+    token?: string;
+  };
+  group?: {
+    listen?: Array<{
+      group_id: string;
+      members: any[];
+    }>;
+  };
+  me?: string;
+  resource?: {
+    path?: string;
+    folder?: Array<{
+      name: string;
+      path: string;
+      type: string;
+      children?: string[];
+    }>;
+  };
+  ai?: any[];
+  oss?: {
+    region?: string;
+    accessKeyId?: string;
+    accessKeySecret?: string;
+    bucket?: string;
+  };
+  database?: {
+    url?: string;
+  };
+  BG?: string[];
 }
 
-let config = {
-  ws: {
-    url: process.env.WS_URL || 'ws://127.0.0.1:6658',
-    token: process.env.WS_TOKEN || ''
-  },
+
+
+const config: Config = {
   http: {
-    baseURL: process.env.HTTP_BASE_URL || 'http://127.0.0.1:3000',
-    timeout: Number(process.env.HTTP_TIMEOUT || 30000),
-    token: process.env.HTTP_TOKEN || ''
+    timeout: 30000,
   },
-  group: {
-    listen: process.env.GROUP_LISTEN.split(',').map(t => ({
-      group_id: t,
-      members: []
-    }))
-  },
-  me: process.env.ME || '2934785512',
-  resource: {
-    path: process.env.RESOURCE_PATH || '@/src/resource',
-    folder: parseJSON(process.env.RESOURCE_FOLDER, [] as { name: string; path: string; type: string; children?: string[] }[])
-  },
-  ai: parseJSON(process.env.AI_CONFIG, [] as any[]),
-  oss: {
-    region: process.env.OSS_REGION || 'oss-cn-hangzhou',
-    accessKeyId: process.env.OSS_ACCESS_KEY_ID || '',
-    accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET || '',
-    bucket: process.env.OSS_BUCKET || ''
-  },
-  database: {
-    url: process.env.DATABASE_URL || ''
-  },
-  BG: [] as string[]
+};
+
+/** 从数据库加载配置后调用，一次性填充 config 对象 */
+export function loadConfig(data: Record<string, any>) {
+  Object.assign(config, data);
 }
 
+/** 运行时局部更新配置（initializer / scheduler 使用） */
 export function updateConfig(data: Record<string, any>) {
-  Object.assign(config, data)
+  Object.assign(config, data);
 }
 
-export default config
+export default config;

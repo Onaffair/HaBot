@@ -9,7 +9,8 @@
     "paths": {
       "@/*": ["src/bot/*"],
       "@config": ["src/bot.config.ts"],
-      "@utils/*": ["src/bot/utils/*"]
+      "@utils/*": ["src/bot/utils/*"],
+      "@resources/*": ["src/resources/*"]
     },
     "strict": false,
     "esModuleInterop": true,
@@ -17,6 +18,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "src/bot/api"],
+  "include": ["src", "src/bot/api", "src/bot/utils/message.ts"],
   "exclude": ["node_modules", "dist","test.js"]
 }

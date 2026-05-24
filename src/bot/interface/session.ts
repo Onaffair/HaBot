@@ -5,7 +5,7 @@ import config from '@config'
 
 export class Session {
   raw: Message
-  
+
   constructor(message: Message) {
     this.raw = message
   }
@@ -18,39 +18,35 @@ export class Session {
     return this.raw.group_id
   }
 
+  /** 返回群成员名称列表（card 优先，否则 nickname），无副作用 */
   get groupMemberNames() {
     if (!this.groupId) return []
-    const group = config.group.listen.find(item => item.group_id === this.groupId?.toString())
-    return group?.members?.map(item => {
-      if (item?.card?.trim() !== '') {
-        item.nickname = item?.card
-        return item?.card
-      } else {
-        item.card = item.nickname
-        return item?.nickname
-      }
-    }) || []
+    const group = config.group.listen.find(
+      (item) => item.group_id === this.groupId?.toString(),
+    )
+    return (
+      group?.members?.map((item) =>
+        item?.card?.trim() !== '' ? item.card : item.nickname,
+      ) || []
+    )
   }
 
   get message() {
-    // 简化获取文本内容，实际情况可能需要更复杂的解析
-    // const textMsg = this.raw.message?.find(m => m.type === 'text')
-    // return textMsg?.data?.text || ''
     return this.raw.message
-  }
-  
-  // 提取纯文本内容，移除@等干扰
-  get textContent() {
-    return this.raw.message
-      ?.filter(item => item.type === 'text')
-      .map(item => item?.data?.text || '')
-      .join('')
-      .trim() || ''
   }
 
-  async sendMessage(payload:MessageSendType){
+  /** 提取纯文本内容（去除 @ 等非文本消息） */
+  get textContent() {
+    return (
+      this.raw.message
+        ?.filter((item) => item.type === 'text')
+        .map((item) => item?.data?.text || '')
+        .join('')
+        .trim() || ''
+    )
+  }
+
+  async sendMessage(payload: MessageSendType) {
     return await postMessage(payload)
   }
-
-  // 可以拓展 reply, sendText 等方法
 }

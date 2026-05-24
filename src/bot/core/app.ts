@@ -56,17 +56,15 @@ export class App {
     }
 
     // 2. 命令层执行
-    const session = new Session(data)
-    
+    const session = new Session(data)    
     // 遍历命令进行匹配
     for (const cmd of this.commands) {
       if (await cmd.match(session)) {
         logger.info(`Match command: ${cmd.name}`)
-
         try {
-          const msg = getMessageSendTypeInstance(session)
-
+          const msg = getMessageSendTypeInstance(session)  
           const res = await cmd.handle(session)
+          
           if (res == undefined || !res) return
           msg.message.push(...res)
           await session.sendMessage(msg)

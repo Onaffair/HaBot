@@ -9,4 +9,8 @@ export interface Command {
   priority?: number,
   ext?: any,
 }
-export const createCommand = (cmd: Command) => cmd
+export const commands: Command[] = []
+export const createCommand = (cmd: Command) => {
+  commands.push(cmd)
+  return cmd
+}

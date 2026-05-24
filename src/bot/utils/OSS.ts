@@ -12,7 +12,7 @@ export class OSSService {
     this.init()
   }
 
-  private init() {
+  init() {
     const { region, accessKeyId, accessKeySecret, bucket } = config.oss
     if (region && accessKeyId && accessKeySecret && bucket) {
       this.client  = new OSS({

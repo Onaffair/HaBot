@@ -11,8 +11,8 @@ export default createFilter({
     // 私聊消息直接通过
     if (message.message_type === 'private') {
       logger.info("privateMsg", message.message);
-      
-      return false
+      // 私聊消息直接通过
+      return true
     }
     
     // 群聊消息需要 @ 机器人或者 @ 全体
