@@ -7,7 +7,6 @@ const logger = createLogger('ResourceScanner');
 export interface ResourceFolder {
   name: string;
   path: string;
-  type: string;
   children?: string[];
 }
 
@@ -39,9 +38,7 @@ export async function scanOSSResourceFolders(
 
       const validFiles = files.filter((fileUrl) => {
         const fileName = path.basename(new URL(fileUrl).pathname);
-        if (folder.type === 'image') return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
-        if (folder.type === 'voice') return /\.(mp3|wav|ogg|amr)$/i.test(fileName);
-        return true;
+        return /\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|amr)$/i.test(fileName);
       });
 
       result.push({ ...folder, children: validFiles });

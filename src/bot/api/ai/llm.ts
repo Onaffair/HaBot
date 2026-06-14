@@ -1,13 +1,13 @@
 import { Session } from "@/interface/session";
 import { Message } from "@/interface/messageReceiveType";
 import { MessageItemType, GroupUserInfoType } from "@/interface/MessageSendType";
-import { sendAImessage } from "..";
-import { UnifiedMessage, UnifiedContent } from "../types";
+import { AIRequestManager } from "@/adapter/ai";
+import type { BaseMessage, BaseMessageContent } from "@/adapter/ai";
 
 // ========== 共享工具：将群聊消息项转换为统一内容格式 ==========
 
-function extractMessageContent(items: MessageItemType[]): UnifiedContent[] {
-  const result: UnifiedContent[] = [];
+export function extractMessageContent(items: MessageItemType[]): BaseMessageContent[] {
+  const result: BaseMessageContent[] = [];
   for (const item of items) {
     switch (item.type) {
       case 'text':
@@ -37,7 +37,7 @@ function extractMessageContent(items: MessageItemType[]): UnifiedContent[] {
 // ========== findTargetPersonByAI ==========
 
 export async function findTargetPersonByAI(session: Session) {
-  function getPrompt(groupMembers: string[]): UnifiedMessage {
+  function getPrompt(groupMembers: string[]): BaseMessage {
     const content = `
 你是一只只会哈气的猫咪，你的唯一功能就是发出"哈——"的声音。当用户需要向某人哈气时，会先提供一段用户信息数组字符串（格式如："张三,李四,王五,赵六,孙七"），并随后给出目标指令。
 你的处理规则：
@@ -79,7 +79,7 @@ export async function findTargetPersonByAI(session: Session) {
     return { role: 'system', content: [{ type: 'text', text: content }] };
   }
 
-  const messages: UnifiedMessage[] = [
+  const messages: BaseMessage[] = [
     getPrompt(session.groupMemberNames),
     {
       role: 'user',
@@ -88,7 +88,7 @@ export async function findTargetPersonByAI(session: Session) {
   ];
 
   try {
-    return await sendAImessage(messages);
+    return await AIRequestManager.getInstance().sendMessage('openai', messages);
   } catch (e) {
     console.log("err", e);
     return '';
@@ -98,7 +98,7 @@ export async function findTargetPersonByAI(session: Session) {
 // ========== makeConclutionByAI ==========
 
 export async function makeConclutionByAI(message: MessageItemType[], option?: any) {
-  function getPrompt(): UnifiedMessage {
+  function getPrompt(): BaseMessage {
     const content = option?.prompt || `
 **角色设定**：
 你是"圆头耄耋"——一只风靡全网、以脾气暴躁闻名的橘猫。你的外貌是脑袋圆滚滚的，生气时会瞪大眼睛、耳朵紧贴脑袋（网友称为"圆头模式"），并伴随标志性的"哈气"声（类似"嘶——"的威胁声）。你原本是流浪猫，因闯入博主"白手套&马犬旺财"家中偷吃猫粮、攻击其他猫而走红，被网友戏称为"猫爹"（谐音"耄耋"）。
@@ -139,14 +139,13 @@ export async function makeConclutionByAI(message: MessageItemType[], option?: an
 - 你无需提及"耄耋"的传统文化寓意（如长寿象征），只需聚焦网络梗中的"暴躁猫爹"形象。
 - 若用户询问你的来历，可简短引用背景："本猫是江湖传说！偷猫粮打架第一名，哈！"
 `;
-
     return {
       role: 'system',
       content: [{ type: 'text', text: content }],
     };
   }
 
-  const messages: UnifiedMessage[] = [
+  const messages: BaseMessage[] = [
     getPrompt(),
     {
       role: 'user',
@@ -155,7 +154,7 @@ export async function makeConclutionByAI(message: MessageItemType[], option?: an
   ];
 
   try {
-    return await sendAImessage(messages);
+    return await AIRequestManager.getInstance().sendMessage('openai', messages);
   } catch (e) {
     console.log("concludeErr", e);
     return '';
@@ -165,7 +164,7 @@ export async function makeConclutionByAI(message: MessageItemType[], option?: an
 // ========== makeSharpCommentsByAI ==========
 
 export async function makeSharpCommentsByAI(message: MessageItemType[]) {
-  function getPrompt(): UnifiedMessage {
+  function getPrompt(): BaseMessage {
     const content = `
 人物设定 · 圆头耄耋
 姓名：圆头耄耋
@@ -234,7 +233,7 @@ export async function makeSharpCommentsByAI(message: MessageItemType[]) {
     };
   }
 
-  const messages: UnifiedMessage[] = [
+  const messages: BaseMessage[] = [
     getPrompt(),
     {
       role: 'user',
@@ -243,9 +242,9 @@ export async function makeSharpCommentsByAI(message: MessageItemType[]) {
   ];
 
   try {
-    console.log(messages);
+    // console.log("ai body",JSON.stringify(messages));
     
-    return await sendAImessage(messages);
+    return await AIRequestManager.getInstance().sendMessage('openai', messages);
   } catch (e) {
     console.log("err", e?.message);
     return '';
@@ -255,7 +254,7 @@ export async function makeSharpCommentsByAI(message: MessageItemType[]) {
 // ========== concludePersonByAI ==========
 
 export async function concludePersonByAI(person: GroupUserInfoType, groupMessages: Message[]) {
-  function getPrompt(): UnifiedMessage {
+  function getPrompt(): BaseMessage {
     const content = `我将给出一段群聊的聊天内容，请你根据聊天内容，
     查出${person.card}的成分,他的qq号为${person.user_id}，语气要以一个互联网乐子人的角度描述，并在最后总结鉴定一下这个人是魔丸还是灵珠
     
@@ -271,12 +270,12 @@ export async function concludePersonByAI(person: GroupUserInfoType, groupMessage
 
   const personMessages = groupMessages.filter((item) => item?.user_id == person.user_id);
 
-  const allContent: UnifiedContent[] = [];
+  const allContent: BaseMessageContent[] = [];
   for (const msg of personMessages) {
     allContent.push(...extractMessageContent(msg.message ?? []));
   }
 
-  const messages: UnifiedMessage[] = [
+  const messages: BaseMessage[] = [
     getPrompt(),
     {
       role: 'user',
@@ -285,7 +284,7 @@ export async function concludePersonByAI(person: GroupUserInfoType, groupMessage
   ];
 
   try {
-    return await sendAImessage(messages);
+    return await AIRequestManager.getInstance().sendMessage('openai', messages);
   } catch (e) {
     console.log("err", e?.message);
     return '';

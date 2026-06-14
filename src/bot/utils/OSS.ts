@@ -1,7 +1,9 @@
 import OSS from 'ali-oss'
-import config from '@config'
+import { BeanFactory } from '@/core/bean'
 import { createLogger } from './logger'
+import type { OssConfig } from '@/beans/oss.bean'
 
+const factory = BeanFactory.getInstance()
 const logger = createLogger('OSS')
 
 export class OSSService {
@@ -13,9 +15,10 @@ export class OSSService {
   }
 
   init() {
-    const { region, accessKeyId, accessKeySecret, bucket } = config.oss
+    const config = factory.getBeanValue<OssConfig>('oss')
+    const { region, accessKeyId, accessKeySecret, bucket } = config || {}
     if (region && accessKeyId && accessKeySecret && bucket) {
-      this.client  = new OSS({
+      this.client = new OSS({
         region,
         accessKeyId,
         accessKeySecret,
@@ -99,7 +102,7 @@ export class OSSService {
         delimiter: '/',
         'max-keys': 1000
       }, {})
-      
+
       return result.prefixes || []
     } catch (e) {
       logger.error(`List directories failed: ${prefix}`, e)
@@ -114,7 +117,7 @@ export class OSSService {
     }
     try {
       const prefix = dirPrefix && !dirPrefix.endsWith('/') ? `${dirPrefix}/` : dirPrefix
-      
+
       const result = await this.client.list({
         prefix,
         'max-keys': 1000

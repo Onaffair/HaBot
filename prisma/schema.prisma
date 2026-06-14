@@ -7,29 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========== 系统配置（键值对，替代 .env 中的简单环境变量） ==========
-model SystemConfig {
-  id    Int    @id @default(autoincrement())
-  key   String @unique
-  value String
-  @@map("system_configs")
-}
-
-// ========== AI 配置 ==========
-model AIConfigEntry {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  platform  String?
-  baseUrl   String   @map("base_url")
-  timeout   Int      @default(100000)
-  secret    String
-  body      String   // JSON 字符串
-  disabled  Boolean  @default(false) @map("disabled")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  @@map("ai_configs")
-}
-
 // ========== 监听群组 ==========
 model GroupListen {
   id      Int     @id @default(autoincrement())
@@ -43,30 +20,8 @@ model ResourceCategory {
   id          Int            @id @default(autoincrement())
   name        String         @unique
   path        String
-  type        String
   description String?
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
-  items       ResourceItem[]
   @@map("resource_categories")
-}
-
-// ========== 资源项 ==========
-model ResourceItem {
-  id         Int              @id @default(autoincrement())
-  categoryId Int              @map("category_id")
-  content    String
-  isActive   Boolean          @default(true) @map("is_active")
-  createdAt  DateTime         @default(now()) @map("created_at")
-  category   ResourceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  @@map("resource_items")
-}
-
-// ========== 聊天消息（已有） ==========
-model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  nickname  String?
-  createdAt DateTime @default(now()) @map("created_at")
-  @@map("messages")
 }

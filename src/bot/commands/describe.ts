@@ -1,10 +1,13 @@
 import { getMessageById } from "@/api";
-import { generateImageByAI } from "@/api/ai/IMAGE_GENERATE";
-import { makeConclutionByAI } from "@/api/ai/LLM";
-import { createCommand } from "@/core/command";
+import { generateImageByAI } from "@/api/ai/image";
+import { makeConclutionByAI } from "@/api/ai/llm";
+import { Command, CommandFactory } from "@/core/command";
 import { judgeIsAtMe, makeImageMsg, makeReplyMsg } from "@/utils/message";
 
-export default createCommand({
+
+
+const describeCommand:Command = {
+
   name: '描述',
   match: (session) => judgeIsAtMe(session) && session.textContent.includes('描述一下'),
   handle: async (session) => {
@@ -21,4 +24,7 @@ export default createCommand({
     return [makeReplyMsg(replyMessage.data.id as string), makeImageMsg(img.url)];
   },
   description: '@耄耋+描述一下 可以让耄耋描述引用的内容',
-});
+
+}
+const fac = CommandFactory.getInstance()
+fac.registry(describeCommand)

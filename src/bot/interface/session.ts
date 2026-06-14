@@ -1,7 +1,10 @@
 import type { Message } from '@/interface/messageReceiveType'
 import { postMessage } from '@/api'
 import { MessageItemType, MessageSendType } from '@/interface/MessageSendType'
-import config from '@config'
+import { BeanFactory } from '@/core/bean'
+import type { GroupConfig } from '@/beans/group.bean'
+
+const factory = BeanFactory.getInstance()
 
 export class Session {
   raw: Message
@@ -21,11 +24,12 @@ export class Session {
   /** 返回群成员名称列表（card 优先，否则 nickname），无副作用 */
   get groupMemberNames() {
     if (!this.groupId) return []
-    const group = config.group.listen.find(
+    const group = factory.getBeanValue<GroupConfig>('group')
+    const groupInfo = group?.listen?.find(
       (item) => item.group_id === this.groupId?.toString(),
     )
     return (
-      group?.members?.map((item) =>
+      groupInfo?.members?.map((item) =>
         item?.card?.trim() !== '' ? item.card : item.nickname,
       ) || []
     )
@@ -47,6 +51,8 @@ export class Session {
   }
 
   async sendMessage(payload: MessageSendType) {
+    // console.log(JSON.stringify(payload));
+
     return await postMessage(payload)
   }
 }

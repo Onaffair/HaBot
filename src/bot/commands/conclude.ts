@@ -1,11 +1,10 @@
 import { getGroupMessage, getMessageById } from "@/api";
-import { makeConclutionByAI } from "@/api/ai/LLM";
-import { createCommand } from "@/core/command";
+import { makeConclutionByAI } from "@/api/ai/llm";
+import { Command, CommandFactory } from "@/core/command";
 import { judgeIsAtMe, makeReplyMsg, makeTextMsg } from "@/utils/message";
 
-const BOX_TAG_RE = /[<|]begin_of_box[>|]|[<|]end_of_box[>|]/g;
 
-export default createCommand({
+const concludeCmd: Command = {
   name: '总结',
   match: (session) => judgeIsAtMe(session) && session.textContent.includes('总结一下'),
   handle: async (session) => {
@@ -17,8 +16,10 @@ export default createCommand({
 
     let res = await makeConclutionByAI(targetMsg.message);
     if (!res.trim()) return;
-    res = res.replace(BOX_TAG_RE, '').trim();
     return [makeReplyMsg(replyMessage.data.id as string), makeTextMsg(res)];
   },
   description: '@耄耋+总结一下 可以让耄耋总结概括引用的内容',
-});
+
+}
+const fac = CommandFactory.getInstance()
+fac.registry(concludeCmd)

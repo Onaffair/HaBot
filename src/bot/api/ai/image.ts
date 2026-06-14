@@ -1,6 +1,6 @@
 import { MessageItemType } from "@/interface/MessageSendType";
-import { sendAImessage } from "..";
-import { UnifiedMessage } from "../types";
+import { AIRequestManager } from "@/adapter/ai";
+import type { BaseMessage } from "@/adapter/ai";
 
 /**
  * 根据聊天内容生成应景图片
@@ -15,12 +15,11 @@ export async function generateImageByAI(message: MessageItemType[], option?: any
     ${option?.summary}
   `;
 
-  const messages: UnifiedMessage[] = [
+  const messages: BaseMessage[] = [
     { role: 'system', content: [{ type: 'text', text: promptText }] },
   ];
-
   try {
-    return await sendAImessage(messages, 'image-generator');
+    return await AIRequestManager.getInstance().sendMessage('zhipu', messages);
   } catch (e) {
     console.log("imageErr", (e as any)?.message);
     return { url: '' };

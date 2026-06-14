@@ -1,7 +1,6 @@
-import { Command, createCommand } from "@/core/command";
-import { makeAtMsg, makeRandomImage, makeTextMsg, makeRandomVoice } from "@/utils/message";
+import { Command, CommandFactory } from "@/core/command";
+import { makeAtMsg, makeRandomResource, makeTextMsg } from "@/utils/message";
 import { createLogger } from "@utils/logger";
-import config from '@config';
 import { genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
 
 const logger = createLogger('Reactions');
@@ -15,84 +14,99 @@ function createGameReaction(
   keywords: string[],
   resourceName: string,
 ): Command {
-  return createCommand({
+  const cmd: Command = {
     name,
     description,
     match: (session) => keywords.some((k) => session.textContent.includes(k)),
     handle: async () => {
-      const img = makeRandomImage(resourceName);
+      const img = makeRandomResource(resourceName);
       if (!img) return;
       logger.info(`[${name}] Sending image: ${img.data.file}`);
       return [img];
     },
-  });
+  };
+  CommandFactory.getInstance().registry(cmd);
+  return cmd;
 }
 
-// ========== 命令列表 ==========
+// ========== 游戏反应命令 ==========
 
-const strategies: Command[] = [
-  createGameReaction('genshin', '原神', genshinArr, '原神'),
-  createGameReaction('mc', '鸣潮', mcArr, 'mc'),
-  createGameReaction('yys', '阴阳师', yysArr, 'yys'),
-  createGameReaction('星铁', '星铁', starTrailArr, '星铁'),
+const genshinCmd = createGameReaction('genshin', '原神', genshinArr, '原神');
 
-  createCommand({
-    name: '哈气',
-    description: '随机获取一张哈气图片',
-    priority: 9,
-    match: (session) => {
-      return session.textContent === '哈气'
-    },
-    handle: async () => {
-      const img = makeRandomImage();
-      if (!img) return;
-      logger.info(`[哈气] Sending image: ${img.data.file}`);
-      return [img];
-    },
-  }),
 
-  createCommand({
-    name: '哈个气',
-    description: '发送"哈个气"可以让耄耋语音哈气',
-    match: (session) => session.textContent === '哈个气',
-    handle: async () => {
-      const voice = makeRandomVoice();
-      if (!voice) return;
-      return [voice];
-    },
-  }),
+const mcCmd = createGameReaction('mc', '鸣潮', mcArr, 'mc');
 
-  createCommand({
-    name: '应激',
-    description: '发送的内容中带有"哈气"时会使耄耋应激',
-    priority: 0,
-    match: (session) => session.textContent.includes('哈气'),
-    handle: async (session) => {
-      const img = makeRandomImage('stress');
-      if (!img) return;
-      const sender = session.userId;
-      return [
-        makeAtMsg(sender),
-        makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'),
-        img,
-      ];
-    },
-  }),
 
-  createCommand({
-    name: 'KeywordReaction',
-    description: '关键词触发资源图片',
-    match: (session) =>
-      config.resource?.folder?.some((f) => session.textContent.includes(f.name)) ?? false,
-    handle: async (session) => {
-      const folder = config.resource.folder.find((f) => session.textContent.includes(f.name));
-      if (!folder) return;
-      const img = makeRandomImage(folder.name);
-      if (!img) return;
-      logger.info(`[KeywordReaction] Sending image for ${folder.name}: ${img.data.file}`);
-      return [img];
-    },
-  }),
-];
+const yysCmd = createGameReaction('yys', '阴阳师', yysArr, 'yys');
 
-export default strategies;
+
+const starTrailCmd = createGameReaction('星铁', '星铁', starTrailArr, '星铁');
+
+
+// ========== 哈气命令 ==========
+
+const haqiCmd: Command = {
+  name: '哈气',
+  description: '随机获取一张哈气图片',
+  priority: 9,
+  match: (session) => session.textContent === '哈气',
+  handle: async () => {
+    const img = makeRandomResource('cat');
+    if (!img) return;
+    logger.info(`[哈气] Sending image: ${img.data.file}`);
+    return [img];
+  },
+};
+const haqiFac = CommandFactory.getInstance();
+haqiFac.registry(haqiCmd);
+
+
+// ========== 哈个气命令 ==========
+
+const haqiVoiceCmd: Command = {
+  name: '哈个气',
+  description: '发送"哈个气"可以让耄耋语音哈气',
+  match: (session) => session.textContent === '哈个气',
+  handle: async () => {
+    const voice = makeRandomResource('cat_voice');
+    if (!voice) return;
+    return [voice];
+  },
+};
+const haqiVoiceFac = CommandFactory.getInstance();
+haqiVoiceFac.registry(haqiVoiceCmd);
+
+
+// ========== 应激命令 ==========
+
+const yinjiCmd: Command = {
+  name: '应激',
+  description: '发送的内容中带有"哈气"时会使耄耋应激',
+  priority: 0,
+  match: (session) => session.textContent.includes('哈气'),
+  handle: async (session) => {
+    const img = makeRandomResource('stress');
+    if (!img) return;
+    const sender = session.userId;
+    return [
+      makeAtMsg(sender),
+      makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'),
+      img,
+    ];
+  },
+};
+const yinjiFac = CommandFactory.getInstance();
+yinjiFac.registry(yinjiCmd);
+
+
+// ========== 你不是我兄弟命令 ==========
+const notMyBrotherCmd: Command = {
+  name: '你不是我兄弟',
+  description: '你不是我兄弟',
+  match: (session) => "不是兄弟".split("").every(t => session.textContent.includes(t)),
+  handle: async () => {
+    return [makeRandomResource('other', '你不是我兄弟')];
+  },
+};
+const notMyBrotherFac = CommandFactory.getInstance();
+notMyBrotherFac.registry(notMyBrotherCmd)

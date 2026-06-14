@@ -1,9 +1,10 @@
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
-import config from '@config'
+import { BeanFactory } from '@/core/bean'
 import type { Message } from '@/interface/messageReceiveType'
 import { createLogger } from '@utils/logger'
 
+const factory = BeanFactory.getInstance()
 const logger = createLogger('BotClient')
 
 export default class BotClient extends EventEmitter {
@@ -22,8 +23,8 @@ export default class BotClient extends EventEmitter {
 
   constructor() {
     super()
-    this.url = config.ws.url
-    this.token = config.ws.token
+    this.url = process.env.WS_URL
+    this.token = process.env.WS_TOKEN
     this.ws = null
     this.reconnectAttempts = 0
     this.heartbeatTimer = null
@@ -40,7 +41,7 @@ export default class BotClient extends EventEmitter {
     const fullUrl = this.token ? `${this.url}?access_token=${this.token}` : this.url
     this.ws = new WebSocket(fullUrl)
     logger.info("startConnect to Server");
-    
+
     this.ws.on('open', () => {
       logger.info('WebSocket connected')
       this.reconnectAttempts = 0
@@ -62,14 +63,14 @@ export default class BotClient extends EventEmitter {
 
     this.ws.on('close', () => {
       logger.info("WebSocket disconnected");
-      
+
       this.stopHeartbeat()
       this.scheduleReconnect()
     })
 
     this.ws.on('error', (err: Error) => {
       logger.error("wsError: ", err);
-      
+
       this.stopHeartbeat()
       this.scheduleReconnect()
     })
