@@ -1,18 +1,18 @@
 import { BeanFactory } from '@/core/bean';
-import { MessageItemType, MessageSendType } from "@/interface/MessageSendType";
+import { MessageItemType, GroupMessageSendType } from "@/interface/MessageSendType";
 import { Session } from "@/interface/session";
 import { createLogger } from '@utils/logger'
-import type { ResourceConfig } from '@/beans/resource.bean';
+import type { ResourceConfig } from '@/beans/resource';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('MessageUtils')
 
-export function makeRandomResource(folder:string, name?: string): MessageItemType {
+export function makeRandomResource(folder: string, name?: string): MessageItemType {
   const resource = factory.getBeanValue<ResourceConfig>('resource')
   const targetFolder = resource?.folder?.find(f => f.name === folder)
   let items = targetFolder?.children || []
   // console.log(items);
-  
+
   if (name) {
     const found = items.find(t => t.includes(name))
     items = found ? [found] : []
@@ -43,6 +43,18 @@ export function makeVoiceMsg(url: string) {
   }
   return msg
 }
+
+export function makeVideoMsg(url: string) {
+  const msg = {} as MessageItemType
+  msg.type = 'video'
+
+  msg.data = {
+    file: url
+  }
+  return msg
+}
+
+
 export function makeTextMsg(text: string): MessageItemType {
   const msg = {} as MessageItemType
   msg.type = 'text'
@@ -78,11 +90,6 @@ export function makeImageMsg(url: string) {
     url: url,
   }
   return msg
-}
-
-
-export function makeMessageInstance(): MessageSendType {
-  return { message: [] } as MessageSendType
 }
 
 export function judgeIsAtMe(session: Session) {

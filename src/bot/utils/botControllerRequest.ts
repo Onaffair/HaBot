@@ -1,7 +1,4 @@
 import axios from 'axios'
-import { BeanFactory } from '@/core/bean'
-
-const factory = BeanFactory.getInstance()
 
 const request = axios.create({
   baseURL: process.env.HTTP_BASE_URL,

@@ -1,11 +1,11 @@
 import { Session } from '../interface/session'
-import { getMessageSendTypeInstance, MessageItemType } from '../interface/MessageSendType'
+import { ActionResult } from '../interface/actoin'
 import { createLogger } from '@/utils/logger';
 
 export interface Command {
   name: string,
   match: (session: Session) => boolean | Promise<boolean>,
-  handle: (session: Session) => MessageItemType[] | undefined | Promise<MessageItemType[] | undefined>;
+  handle: (session: Session) => ActionResult | undefined | Promise<ActionResult | undefined>;
   description?: string,
   priority?: number,
   ext?: any,
@@ -36,7 +36,7 @@ export class CommandFactory {
     return this.commands.sort((a, b) => a.priority - b.priority)
   }
 
-  async handleMessage(session: Session) {
+  async handleMessage(session: Session): Promise<ActionResult> | undefined | null {
     for (const cmd of this.commands) {
       if (await cmd.match(session)) {
         logger.info(`Match command: ${cmd.name}`)

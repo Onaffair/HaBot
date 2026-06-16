@@ -18,8 +18,8 @@ const resourceBean: Bean<ResourceConfig> = {
   },
   init: async () => {
     const db = DatabaseService.getInstance()
-    if (!db.prisma) return
-    const categories = await db.prisma.resourceCategory.findMany()
+    if (!db.resourceCategory) return
+    const categories = await db.resourceCategory.findMany()
     const fac = BeanFactory.getInstance()
 
     fac.setBeanValue('resource', {
@@ -35,4 +35,3 @@ const resourceBean: Bean<ResourceConfig> = {
 
 const factory = BeanFactory.getInstance();
 factory.registry(resourceBean);
-

@@ -14,8 +14,8 @@ const groupBean: Bean<GroupConfig> = {
   },
   init: async () => {
     const db = DatabaseService.getInstance()
-    if (!db.prisma) return;
-    const groups = await db.prisma.groupListen.findMany({
+    if (!db.groupListen) return;
+    const groups = await db.groupListen.findMany({
       where: { enabled: true },
     });
     const fac = BeanFactory.getInstance();
@@ -28,4 +28,3 @@ const groupBean: Bean<GroupConfig> = {
 };
 const factory = BeanFactory.getInstance();
 factory.registry(groupBean);
-

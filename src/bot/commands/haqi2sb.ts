@@ -4,7 +4,7 @@ import { Command, CommandFactory } from "@/core/command";
 import { MessageItemType } from "@/interface/MessageSendType";
 import { makeRandomResource } from "@/utils/message";
 import { createLogger } from '@utils/logger'
-import type { GroupConfig } from '@/beans/group.bean';
+import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('HaQiToSB')
@@ -45,7 +45,7 @@ const haqiCmd: Command = {
       return item
     }).filter(item => item.data.qq)
     if (!atItems.length) return
-    return [...atItems, makeRandomResource('cat')]
+    return { type: 'message', items: [...atItems, makeRandomResource('cat')] }
   },
   description: '对某人哈气',
   priority: 10

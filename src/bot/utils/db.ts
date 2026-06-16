@@ -1,10 +1,7 @@
 import { BeanFactory } from '@/core/bean';
-import type { ResourceConfig } from '@/beans/resource.bean';
-import type { DatabaseConfig } from '@/beans/database.bean';
 import { PrismaClient } from '@prisma/client'
 import { createLogger } from '@utils/logger'
 
-const factory = BeanFactory.getInstance()
 const logger = createLogger('DB')
 class DatabaseService {
   private static instance: DatabaseService
@@ -49,17 +46,15 @@ class DatabaseService {
     }
   }
 
-  public async findMany<T = any>(model: keyof PrismaClient, args?: any): Promise<T[]> {
-    if (!this.prisma) return []
-    // @ts-ignore
-    if (this.prisma[model] && typeof this.prisma[model].findMany === 'function') {
-      // @ts-ignore
-      return this.prisma[model].findMany(args)
-    }
-    return []
+  /** Typed delegate: group_listens 表操作 */
+  get groupListen() {
+    return this.prisma?.groupListen
+  }
+
+  /** Typed delegate: resource_categories 表操作 */
+  get resourceCategory() {
+    return this.prisma?.resourceCategory
   }
 }
-
-
 export default DatabaseService;
 export const db = DatabaseService.getInstance()

@@ -11,7 +11,6 @@ const logger = createLogger('App')
 
 class App {
   static instance: App
-
   private client: BotClient
   private commandFactory: CommandFactory
   private filterFactory: FilterFactory
@@ -22,16 +21,12 @@ class App {
     this.filterFactory = FilterFactory.getInstance()
     this.setupListeners()
   }
-
-
   static getInstance() {
     if (!this.instance) {
       this.instance = new App()
     }
     return this.instance
   }
-
-
   private setupListeners() {
     // 监听所有消息，统一处理
     this.client.on('message', this.handleMessage.bind(this))
@@ -40,16 +35,17 @@ class App {
     try {
       // 1. 过滤层校验
       const passed = this.filterFactory.handleMessage(data)
-      if (!passed) return 
+      if (!passed) return
       const session = new Session(data)
       // 2. 命令层执行
-      const messages = await this.commandFactory.handleMessage(session)
-      if (!messages) return
+      const action = await this.commandFactory.handleMessage(session)
+      if (!action) return
 
       // 3.返回会话消息
-      const msg = getMessageSendTypeInstance(session)
-      msg.message.push(...messages)
-      await session.sendMessage(msg)
+      await session.dispatch(action)
+      // const msg = getMessageSendTypeInstance(session)
+      // msg.message.push(...messages)
+      // await session.sendMessage(msg)
     } catch (e) {
       logger.error(e?.message)
     }

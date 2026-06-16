@@ -12,16 +12,15 @@ model GroupListen {
   id      Int     @id @default(autoincrement())
   groupId String  @unique @map("group_id")
   enabled Boolean @default(true)
+
   @@map("group_listens")
 }
 
 // ========== 资源分类 ==========
 model ResourceCategory {
-  id          Int            @id @default(autoincrement())
-  name        String         @unique
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   path        String
   description String?
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
   @@map("resource_categories")
 }

@@ -24,10 +24,8 @@ export interface GroupUserInfoType {
   title: string;             // 专属头衔
 }
 
-
-
 export interface MessageItemType {
-  type: 'text' | 'image' | 'at' | 'record' | 'reply' | 'voice' | 'video' | 'forward',
+  type: 'text' | 'image' | 'at' | 'record' | 'reply' | 'voice' | 'video' | 'forward' | 'json',
   data: {
     text?: string,
     file?: string,
@@ -35,13 +33,14 @@ export interface MessageItemType {
     id?: string | number,
     url?: string,
     content?: Array<Message>
+    data?: string
   }
 }
-export interface MessageSendType {
+export interface GroupMessageSendType {
   group_id?: string,
   message?: MessageItemType[],
 }
-export function getMessageSendTypeInstance(session: Session): MessageSendType {
+export function getMessageSendTypeInstance(session: Session): GroupMessageSendType {
   return {
     group_id: session.groupId.toString(),
     message: [],

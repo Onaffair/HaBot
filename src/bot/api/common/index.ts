@@ -1,5 +1,7 @@
-import axios from 'axios';
 import { createLogger } from '@utils/logger';
+import request from '@/utils/webCrawlerRequest';
+import md5 from '@/utils/md5';
+import { AxiosRequestConfig } from 'axios';
 
 const logger = createLogger('BGImage');
 
@@ -12,12 +14,12 @@ interface ImageReqParams {
 /** 获取涩图 woman*/
 export async function getBGImage(params: ImageReqParams) {
   try {
-    const res = await axios.post(
+    const res = await request.post(
       'https://alaan.top/ajax.php',
       new URLSearchParams({ ...params }),
       { timeout: 30000 },
     );
-    return res?.data?.data?.map(t => t.img)?.flat();
+    return res?.data?.map(t => t.img)?.flat();
   } catch (e: any) {
     logger.error('Failed to fetch BG image:', e?.message);
     return [];
@@ -26,7 +28,7 @@ export async function getBGImage(params: ImageReqParams) {
 /** 获取涩图 man*/
 export async function getBMImage(params: any) {
   try {
-    const res = await axios.get('https://www.pexels.com/zh-cn/api/v3/getty-media/photos/muscular%20man', {
+    const res = await request.get('https://www.pexels.com/zh-cn/api/v3/getty-media/photos/muscular%20man', {
       params,
       headers: {
         'accept': '*/*',
@@ -52,9 +54,58 @@ export async function getBMImage(params: any) {
     })
     // console.log(JSON.stringify(res?.data?.data?.map(t => t?.attributes?.image)));
 
-    return res?.data?.data.map(t => t?.attributes?.image)
+    return res?.data.map(t => t?.attributes?.image)
   } catch (e) {
     logger.error(`fail to load BM images ${e?.message}`)
     return []
   }
 }
+
+/**获取B站视频 */
+
+//获取视频元信息
+export async function getVideoMetaInfo(bvid: string) {
+  return request.get('https://api.bilibili.com/x/web-interface/view',
+    {
+      params: { bvid },
+    }
+  )
+}
+// 获取播放地址
+interface VideoUrlParams {
+  bvid: string;
+  cid: string;
+  fnval?: number;
+  qn?: number;
+  fourk?: number;
+}
+export async function getVideoUrl(
+  params: VideoUrlParams,
+  options?: AxiosRequestConfig
+) {
+  //WBI签名
+  // const queryString = [bvid, cid, fnval, qn, fourk, wts].join('&')
+  // const img_key = 'd569546b86c252:db:9bc7e99c5d71e5'
+  // const sub_key = '557251g796:g54:f:ee94g8fg969e2de'
+  // const mixnKey = md5(img_key, sub_key)
+  // const signStr = queryString + mixnKey
+  // const w_rid = md5(signStr)
+
+  return request.get('https://api.bilibili.com/x/player/wbi/playurl',
+    {
+      params,
+      ...options
+    }
+  )
+}
+/**获取B站视频 */
+
+// 资源获取
+export async function downloadFromUrl(url: string, option: AxiosRequestConfig = {}): Promise<any> {
+  return request.get(url,
+    option
+  )
+}
+
+
+

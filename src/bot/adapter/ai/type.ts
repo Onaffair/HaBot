@@ -17,7 +17,7 @@ export interface AIPlatform {
   secret: string,
   model: string,
   /**  BaseMessage[] 转换为平台请求体，返回 headers 和 body */
-  adapter: (messages: BaseMessage[]) => { headers: Record<string, string>; body: Record<string, any> },
+  adapter: (messages: BaseMessage[] | string) => { headers: Record<string, string>; body: Record<string, any> },
   /** 解析平台原始响应 */
   parser: (response: any) => any
   stream?: boolean,
@@ -82,7 +82,7 @@ export class AIRequestManager {
    */
   async sendMessage(
     name: string,
-    messages: BaseMessage[],
+    messages: BaseMessage[] | string,
     overrides?: { url?: string; secret?: string; model?: string; max_tokens?: number },
   ) {
     const platform = this.registry.get(name)

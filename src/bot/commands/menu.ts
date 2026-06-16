@@ -11,10 +11,10 @@ const maodieCmd: Command = {
       return `【${cmd.name}】 ${cmd.description || ''}`
     }).join('\n')
 
-    return [makeTextMsg(
+    return { type: 'message', items: [makeTextMsg(
       `耄耋在！
       当前可用指令：\n${helpText}`
-    )]
+    )] };
   }
 }
 const fac = CommandFactory.getInstance()

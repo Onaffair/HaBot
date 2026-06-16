@@ -1,8 +1,8 @@
 import { BeanFactory } from '@/core/bean';
 import { Schedule, ScheduleFactory } from "@/core/schedule";
-import { getGourpMembers } from '@/api';
+import OneBot from '@/api';
 import { createLogger } from '@utils/logger';
-import type { GroupConfig } from '@/beans/group.bean';
+import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('SyncGroupMembers');
@@ -20,8 +20,9 @@ const syncGroupMembersSchedule: Schedule = {
     const reqList: Promise<any>[] = [];
 
     group.listen.forEach((item) => {
-      const res = getGourpMembers(item.group_id)
-        .then((members) => {
+      const res = OneBot.getGroupMemberList({ group_id: item.group_id })
+        .then((resp) => {
+          const members = resp?.data || [];
           item.members = [...members];
         })
         .catch((err) => {

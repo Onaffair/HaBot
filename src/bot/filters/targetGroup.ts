@@ -3,7 +3,7 @@ import { Filter, FilterFactory } from "@/core/filter";
 import { MessageTypeEnum } from "@/enums/MessageTypeEnum";
 import { Message } from "@/interface/messageReceiveType";
 import { createLogger } from '@utils/logger'
-import type { GroupConfig } from '@/beans/group.bean';
+import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('TargetGroupFilter')

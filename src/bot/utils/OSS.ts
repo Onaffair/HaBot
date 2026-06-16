@@ -1,7 +1,7 @@
 import OSS from 'ali-oss'
 import { BeanFactory } from '@/core/bean'
 import { createLogger } from './logger'
-import type { OssConfig } from '@/beans/oss.bean'
+import type { OssConfig } from '@/beans/oss'
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('OSS')

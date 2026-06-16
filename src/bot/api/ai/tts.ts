@@ -6,15 +6,9 @@ import { extractMessageContent } from "./llm";
 
 
 
-export const getAITTS = async (message:MessageItemType[]):Promise<Buffer> =>{
-  const messages:BaseMessage[] = [
-    {
-      role:'user',
-      content: extractMessageContent(message)
-    }
-  ]
+export const getAITTS = async (text:string):Promise<Buffer> =>{
   try {
-    return await AIRequestManager.getInstance().sendMessage('ChatTTS', messages);
+    return await AIRequestManager.getInstance().sendMessage('ChatTTS', text);
   } catch (e) {
     console.log("ttsError", e);
     return null;

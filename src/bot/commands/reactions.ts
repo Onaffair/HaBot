@@ -1,7 +1,7 @@
 import { Command, CommandFactory } from "@/core/command";
 import { makeAtMsg, makeRandomResource, makeTextMsg } from "@/utils/message";
 import { createLogger } from "@utils/logger";
-import { genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
+import { arkNightArr, genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
 
 const logger = createLogger('Reactions');
 
@@ -22,7 +22,7 @@ function createGameReaction(
       const img = makeRandomResource(resourceName);
       if (!img) return;
       logger.info(`[${name}] Sending image: ${img.data.file}`);
-      return [img];
+      return { type: 'message', items: [img] };
     },
   };
   CommandFactory.getInstance().registry(cmd);
@@ -30,18 +30,11 @@ function createGameReaction(
 }
 
 // ========== 游戏反应命令 ==========
-
 const genshinCmd = createGameReaction('genshin', '原神', genshinArr, '原神');
-
-
-const mcCmd = createGameReaction('mc', '鸣潮', mcArr, 'mc');
-
-
-const yysCmd = createGameReaction('yys', '阴阳师', yysArr, 'yys');
-
-
+const mcCmd = createGameReaction('mc', '鸣潮', mcArr, '鸣潮');
+const yysCmd = createGameReaction('yys', '阴阳师', yysArr, '阴阳师');
 const starTrailCmd = createGameReaction('星铁', '星铁', starTrailArr, '星铁');
-
+// const arkNightCmd = createGameReaction('明日方舟','明日方舟',arkNightArr,'明日方舟')
 
 // ========== 哈气命令 ==========
 
@@ -54,13 +47,11 @@ const haqiCmd: Command = {
     const img = makeRandomResource('cat');
     if (!img) return;
     logger.info(`[哈气] Sending image: ${img.data.file}`);
-    return [img];
+    return { type: 'message', items: [img] };
   },
 };
 const haqiFac = CommandFactory.getInstance();
 haqiFac.registry(haqiCmd);
-
-
 // ========== 哈个气命令 ==========
 
 const haqiVoiceCmd: Command = {
@@ -70,7 +61,7 @@ const haqiVoiceCmd: Command = {
   handle: async () => {
     const voice = makeRandomResource('cat_voice');
     if (!voice) return;
-    return [voice];
+    return { type: 'message', items: [voice] };
   },
 };
 const haqiVoiceFac = CommandFactory.getInstance();
@@ -88,11 +79,7 @@ const yinjiCmd: Command = {
     const img = makeRandomResource('stress');
     if (!img) return;
     const sender = session.userId;
-    return [
-      makeAtMsg(sender),
-      makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'),
-      img,
-    ];
+    return { type: 'message', items: [makeAtMsg(sender), makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'), img] };
   },
 };
 const yinjiFac = CommandFactory.getInstance();
@@ -105,7 +92,7 @@ const notMyBrotherCmd: Command = {
   description: '你不是我兄弟',
   match: (session) => "不是兄弟".split("").every(t => session.textContent.includes(t)),
   handle: async () => {
-    return [makeRandomResource('other', '你不是我兄弟')];
+    return { type: 'message', items: [makeRandomResource('other', '你不是我兄弟')] };
   },
 };
 const notMyBrotherFac = CommandFactory.getInstance();

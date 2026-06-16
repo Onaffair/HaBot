@@ -1,8 +1,9 @@
 import type { Message } from '@/interface/messageReceiveType'
-import { postMessage } from '@/api'
-import { MessageItemType, MessageSendType } from '@/interface/MessageSendType'
+import OneBot from '@/api'
+import { MessageItemType, GroupMessageSendType } from '@/interface/MessageSendType'
 import { BeanFactory } from '@/core/bean'
-import type { GroupConfig } from '@/beans/group.bean'
+import type { GroupConfig } from '@/beans/group'
+import { ActionResult } from './actoin'
 
 const factory = BeanFactory.getInstance()
 
@@ -11,6 +12,10 @@ export class Session {
 
   constructor(message: Message) {
     this.raw = message
+  }
+
+  get messageType() {
+    return this.raw.message_type
   }
 
   get userId() {
@@ -50,9 +55,30 @@ export class Session {
     )
   }
 
-  async sendMessage(payload: MessageSendType) {
+  async sendMessage(payload: GroupMessageSendType) {
     // console.log(JSON.stringify(payload));
-
-    return await postMessage(payload)
+    if (this.raw.message_type == 'group') {
+      return await OneBot.sendGroupMsg(payload as any)
+    } else if (this.raw.message_type == 'private') {
+      return
+    }
   }
+
+
+  async dispatch(action: ActionResult) {
+    const { type } = action
+
+    switch (type) {
+      case 'message':
+        return OneBot.sendGroupMsg({ group_id: this.groupId, message: action.items })
+      case 'forward-message':
+        return
+    }
+
+  }
+
+
+
+
+
 }

@@ -1,11 +1,11 @@
-import { getGroupMessage } from "@/api";
+import OneBot from "@/api";
 import { concludePersonByAI } from "@/api/ai/llm";
 import { Command, CommandFactory } from "@/core/command";
 import { GroupUserInfoType } from "@/interface/MessageSendType";
 import { makeTextMsg } from "@/utils/message";
 import { BeanFactory } from '@/core/bean';
 import { createLogger } from "@utils/logger";
-import type { GroupConfig } from '@/beans/group.bean';
+import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('查成分');
@@ -29,14 +29,15 @@ const concludePersonCmd: Command = {
     if (!person) return;
 
     logger.info(`正在查询 ${person.card} 的成分`);
-    const { messages } = await getGroupMessage(session.groupId, 200).catch(() => ({ messages: [] }));
+    const resp = await OneBot.getGroupMsgHistory({ group_id: session.groupId, count: 200 }).catch(() => ({ data: { messages: [] } }));
+    const { messages } = resp?.data ?? { messages: [] };
 
     let res = await concludePersonByAI(person, messages);
     if (!res?.trim()) {
       logger.info(`${person.card} 的成分为空`);
       return;
     }
-    return [makeTextMsg(res)];
+    return { type: 'message', items: [makeTextMsg(res)] };
   },
   description: '查一个人的成分',
 }

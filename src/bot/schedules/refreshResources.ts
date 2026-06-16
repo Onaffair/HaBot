@@ -3,7 +3,7 @@ import path from 'path';
 import { BeanFactory } from '@/core/bean';
 import { Schedule, ScheduleFactory } from "@/core/schedule";
 import { createLogger } from '@utils/logger';
-import type { ResourceConfig } from '@/beans/resource.bean';
+import type { ResourceConfig } from '@/beans/resource';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('RefreshResources');
