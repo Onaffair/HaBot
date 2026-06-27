@@ -1,4 +1,3 @@
-import { BeanFactory } from '@/core/bean';
 import { PrismaClient } from '@prisma/client'
 import { createLogger } from '@utils/logger'
 
@@ -54,6 +53,16 @@ class DatabaseService {
   /** Typed delegate: resource_categories 表操作 */
   get resourceCategory() {
     return this.prisma?.resourceCategory
+  }
+
+  /** Typed delegate: chat_memories 表操作 */
+  get chatMemory() {
+    return this.prisma?.chatMemory
+  }
+
+  /** Typed delegate: memory_summaries 表操作 */
+  get memorySummary() {
+    return this.prisma?.memorySummary
   }
 }
 export default DatabaseService;

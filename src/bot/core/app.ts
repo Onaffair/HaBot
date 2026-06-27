@@ -35,12 +35,11 @@ class App {
     try {
       // 1. 过滤层校验
       const passed = this.filterFactory.handleMessage(data)
-      if (!passed) return
+      if (!passed) return 
       const session = new Session(data)
       // 2. 命令层执行
       const action = await this.commandFactory.handleMessage(session)
       if (!action) return
-
       // 3.返回会话消息
       await session.dispatch(action)
       // const msg = getMessageSendTypeInstance(session)

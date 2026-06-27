@@ -5,21 +5,15 @@ import { AxiosRequestConfig } from 'axios';
 
 const logger = createLogger('BGImage');
 
-interface ImageReqParams {
-  pid: string;
-  pidli: string;
-  pmod: string;
-}
-
 /** 获取涩图 woman*/
-export async function getBGImage(params: ImageReqParams) {
+// https://mikagogo.com/cosplay/${page}
+export async function getBGImage() {
   try {
-    const res = await request.post(
-      'https://alaan.top/ajax.php',
-      new URLSearchParams({ ...params }),
-      { timeout: 30000 },
-    );
-    return res?.data?.map(t => t.img)?.flat();
+    const imgReg = /https:\/\/mikagogo\.com\/wp-content\/uploads\/\d{4}\/\d{2}\/([^"']{15,})*\.jpg/g
+    const reqList = Array.from({ length: 10 }, (_, page) => request.get(`https://mikagogo.com/cosplay/${page + 1}`))
+    const htmlArr = (await Promise.all(reqList)) as any as string[]
+    const res = htmlArr.flatMap((t) => Array.from(t.match(imgReg)))
+    return res
   } catch (e: any) {
     logger.error('Failed to fetch BG image:', e?.message);
     return [];

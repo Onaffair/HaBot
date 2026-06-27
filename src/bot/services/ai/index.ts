@@ -4,4 +4,4 @@ import './strategy/zhipuImage'
 import './strategy/fishAudio'
 
 export { AIRequestManager } from './type'
-export type { AIPlatform, BaseMessage, BaseMessageContent } from './type'
+export type { AIPlatform, BaseMessage, BaseMessageContent, RequestOptions } from './type'

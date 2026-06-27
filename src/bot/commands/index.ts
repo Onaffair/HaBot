@@ -2,7 +2,6 @@ import { readdirSync } from 'fs'
 
 const blacklist: string[] = [
   // 文件名（不含扩展名），加入此列表的不会被自动加载
-  'ChatTTS',
   'menu',
 ]
 

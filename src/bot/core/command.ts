@@ -29,13 +29,13 @@ export class CommandFactory {
 
   registry(cmd: Command) {
     this.commands.push(cmd)
+    this.commands.sort((a, b) => a.priority - b.priority)
     logger.info(`command ${cmd.name} registered`)
   }
 
   getCommand() {
-    return this.commands.sort((a, b) => a.priority - b.priority)
+    return this.commands.sort((a, b) => b.priority - a.priority)
   }
-
   async handleMessage(session: Session): Promise<ActionResult> | undefined | null {
     for (const cmd of this.commands) {
       if (await cmd.match(session)) {

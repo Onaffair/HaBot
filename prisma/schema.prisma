@@ -24,3 +24,30 @@ model ResourceCategory {
   description String?
   @@map("resource_categories")
 }
+
+// ========== 对话记忆 ==========
+model ChatMemory {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  role      String   // 'user' | 'assistant'
+  content   String
+  raw       String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([groupId, createdAt])
+  @@index([groupId, userId])
+  @@map("chat_memories")
+}
+
+// ========== 对话摘要 ==========
+model MemorySummary {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @map("group_id")
+  summary   String
+  sinceId   Int      @map("since_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([groupId])
+  @@map("memory_summaries")
+}

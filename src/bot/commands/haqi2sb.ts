@@ -8,7 +8,6 @@ import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('HaQiToSB')
-
 const haqiCmd: Command = {
   name: '对某人哈气',
   match: (session) => {
@@ -22,19 +21,8 @@ const haqiCmd: Command = {
     const groupMembers = session.groupMemberNames
     const matched = match[1];
     const matchedArr = matched.split(/[,，和与]/g)
-    const targetArr = groupMembers.filter(item => matchedArr.includes(item)).map(item => groupMembers.indexOf(item))
-    console.log("regTarget", targetArr);
-    if (targetArr.length > 0) {
-      haList = targetArr
-    } else {
-      const res = await findTargetPersonByAI(session) as any
-      console.log("aiRes", res);
-      haList = res.split(',').map(item => {
-        const index = Number(item?.trim())
-        return index
-      }).filter(item => !isNaN(item))
-      logger.info("aiTarget", haList);
-    }
+    haList = groupMembers.filter(item => matchedArr.includes(item)).map(item => groupMembers.indexOf(item))
+
     logger.info("哈气列表", haList);
     if (!haList || haList.length === 0) return
     const group = factory.getBeanValue<GroupConfig>('group')

@@ -1,6 +1,6 @@
 import { MessageItemType } from "@/interface/MessageSendType";
-import { AIRequestManager } from "@/adapter/ai";
-import type { BaseMessage } from "@/adapter/ai";
+import { AIRequestManager } from "@/services/ai";
+import type { BaseMessage } from "@/services/ai";
 
 /**
  * 根据聊天内容生成应景图片

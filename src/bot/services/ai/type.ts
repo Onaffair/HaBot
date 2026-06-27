@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 
 export interface BaseMessageContent {
   type: 'text' | 'image' | 'audio' | 'video';
@@ -10,32 +10,40 @@ export interface BaseMessage {
   role: 'system' | 'user' | 'assistant',
   content: BaseMessageContent[]
 }
+/** 每次请求的可选参数：AI 参数与 Axios 参数，分属两个子 key */
+export interface RequestOptions {
+  /** AI 请求参数：调用方按需传入，未传的项沿用实现类成员变量默认值 */
+  aiOptions?: {
+    response_format?: {
+      type: 'text' | 'json_object' | 'json_schema'
+    };
+    model?: string;
+    max_tokens?: number;
+    temperature?: number;
+    stream?: boolean;
+    tools?: object,
+    tool_choice?: string
+  };
+  /** Axios 请求参数：调用方按需传入，未传的项沿用 adapter 返回的 axiosConfig */
+  axiosConfig?: AxiosRequestConfig
+}
+
+/** adapter 返回值扩展：可携带实现类的 axios 层默认配置 */
+export interface AdapterResult {
+  headers: Record<string, string>;
+  body: Record<string, any>;
+}
 
 export interface AIPlatform {
   name: string,
   url: string,
   secret: string,
   model: string,
-  /**  BaseMessage[] 转换为平台请求体，返回 headers 和 body */
-  adapter: (messages: BaseMessage[] | string) => { headers: Record<string, string>; body: Record<string, any> },
+  /** BaseMessage[] 转换为平台请求体，返回 headers、body 及可选的 axiosConfig */
+  adapter: (messages: BaseMessage[] | string, options?: RequestOptions) => AdapterResult,
   /** 解析平台原始响应 */
-  parser: (response: any) => any
-  stream?: boolean,
-  max_tokens?: number,
-  temperature?: number,
-  /** axios 代理配置，用于访问需要代理的 API（如国外站点） */
-  proxy?: { protocol: string; host: string; port: number },
-  responseType?:
-  | 'arraybuffer'
-  | 'blob'
-  | 'document'
-  | 'json'
-  | 'text'
-  | 'stream'
-  | 'formdata';
-
+  parser: (response: any) => any,
 }
-
 class PlatformRegistry {
   private map: Map<string, AIPlatform>;
   constructor() {
@@ -53,7 +61,6 @@ class PlatformRegistry {
     return platform
   }
 }
-
 export class AIRequestManager {
   private static instance: AIRequestManager;
   private registry: PlatformRegistry
@@ -73,33 +80,28 @@ export class AIRequestManager {
   registerPlatform(aiPlatform: AIPlatform) {
     this.registry.register(aiPlatform)
   }
-
   /**
    * 发送消息到指定平台。
    * @param name      平台注册名
    * @param messages  统一消息格式
-   * @param overrides 可选覆盖（url / secret / model），用于数据库配置覆盖平台默认值
+   * @param options   可选 AI 参数与 Axios 参数透传，未传的项按实现类的成员变量默认值
    */
   async sendMessage(
     name: string,
     messages: BaseMessage[] | string,
-    overrides?: { url?: string; secret?: string; model?: string; max_tokens?: number },
+    options?: RequestOptions,
   ) {
     const platform = this.registry.get(name)
 
-    // adapter 返回 { headers, body }
-    const { headers, body } = platform.adapter(messages)
-    // console.log("reqBody", JSON.stringify(body));
+    // adapter 返回 { headers, body, axiosConfig }
+    const { headers, body } = platform.adapter(messages, options)
+    // console.log(JSON.stringify(headers), JSON.stringify(body));
 
-    // overrides 覆盖 body 中的同名字段
-    if (overrides?.model) body.model = overrides.model
-    if (overrides?.max_tokens != null) body.max_tokens = overrides.max_tokens
+    const url = platform.url;
 
-    const url = overrides?.url || platform.url;
-    const res = await this.axios.post(url, body, {
+     const res = await this.axios.post(url, body, {
       headers,
-      ...(platform.proxy ? { proxy: platform.proxy } : {}),
-      ...(platform.responseType ? { responseType: platform.responseType } : {}),
+      ...options?.axiosConfig
     })
     // console.log(`AI response status: ${res.status}, data:`, res.data);
 

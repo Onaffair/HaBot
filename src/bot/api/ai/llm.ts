@@ -1,8 +1,8 @@
 import { Session } from "@/interface/session";
 import { Message } from "@/interface/messageReceiveType";
 import { MessageItemType, GroupUserInfoType } from "@/interface/MessageSendType";
-import { AIRequestManager } from "@/adapter/ai";
-import type { BaseMessage, BaseMessageContent } from "@/adapter/ai";
+import { AIRequestManager } from "@/services/ai";
+import type { BaseMessage, BaseMessageContent } from "@/services/ai";
 
 // ========== 共享工具：将群聊消息项转换为统一内容格式 ==========
 

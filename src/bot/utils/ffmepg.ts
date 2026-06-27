@@ -91,6 +91,21 @@ export class FFmpegTool {
   }
 
   /**
+   * 保存视频
+   */
+  async saveVideo(
+    video: string | Buffer,
+    fileName: string
+  ): Promise<string> {
+    const outputPath = path.join(
+      this.outputDir,
+      `${fileName}.mp4`
+    );
+    fs.writeFileSync(outputPath, video)
+    return outputPath
+  }
+
+  /**
    * 通用执行
    */
   run(args: string[]): Promise<void> {

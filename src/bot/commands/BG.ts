@@ -18,7 +18,7 @@ const BGCmd: Command = {
     const imageMsg = makeImageMsg(url)
     logger.info('[BG] Sending image:', url)
 
-      return { type: 'message', items: [imageMsg] }
+    return { type: 'message', items: [imageMsg] }
   }
 }
 const fac = CommandFactory.getInstance()

@@ -1,5 +1,5 @@
 import type { Message } from '@/interface/messageReceiveType'
-import OneBot from '@/api'
+import OneBot from '@/api/common/oneBot'
 import { MessageItemType, GroupMessageSendType } from '@/interface/MessageSendType'
 import { BeanFactory } from '@/core/bean'
 import type { GroupConfig } from '@/beans/group'
@@ -65,9 +65,11 @@ export class Session {
   }
 
 
+  
+
+
   async dispatch(action: ActionResult) {
     const { type } = action
-
     switch (type) {
       case 'message':
         return OneBot.sendGroupMsg({ group_id: this.groupId, message: action.items })

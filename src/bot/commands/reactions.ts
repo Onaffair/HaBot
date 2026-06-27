@@ -8,7 +8,7 @@ const logger = createLogger('Reactions');
 // ========== 工厂函数 ==========
 
 /** 创建关键词触发图片命令 */
-function createGameReaction(
+function createReaction(
   name: string,
   description: string,
   keywords: string[],
@@ -29,31 +29,15 @@ function createGameReaction(
   return cmd;
 }
 
-// ========== 游戏反应命令 ==========
-const genshinCmd = createGameReaction('genshin', '原神', genshinArr, '原神');
-const mcCmd = createGameReaction('mc', '鸣潮', mcArr, '鸣潮');
-const yysCmd = createGameReaction('yys', '阴阳师', yysArr, '阴阳师');
-const starTrailCmd = createGameReaction('星铁', '星铁', starTrailArr, '星铁');
+// ========== 反应命令 ==========
+const genshinCmd = createReaction('genshin', '原神', genshinArr, '原神');
+const mcCmd = createReaction('mc', '鸣潮', mcArr, '鸣潮');
+// const yysCmd = createGameReaction('yys', '阴阳师', yysArr, '阴阳师');
+const starTrailCmd = createReaction('星铁', '星铁', starTrailArr, '星铁');
+const haqiCmd = createReaction('哈气', '哈气', ['哈气'], 'cat')
 // const arkNightCmd = createGameReaction('明日方舟','明日方舟',arkNightArr,'明日方舟')
 
-// ========== 哈气命令 ==========
-
-const haqiCmd: Command = {
-  name: '哈气',
-  description: '随机获取一张哈气图片',
-  priority: 9,
-  match: (session) => session.textContent === '哈气',
-  handle: async () => {
-    const img = makeRandomResource('cat');
-    if (!img) return;
-    logger.info(`[哈气] Sending image: ${img.data.file}`);
-    return { type: 'message', items: [img] };
-  },
-};
-const haqiFac = CommandFactory.getInstance();
-haqiFac.registry(haqiCmd);
 // ========== 哈个气命令 ==========
-
 const haqiVoiceCmd: Command = {
   name: '哈个气',
   description: '发送"哈个气"可以让耄耋语音哈气',
@@ -67,9 +51,7 @@ const haqiVoiceCmd: Command = {
 const haqiVoiceFac = CommandFactory.getInstance();
 haqiVoiceFac.registry(haqiVoiceCmd);
 
-
 // ========== 应激命令 ==========
-
 const yinjiCmd: Command = {
   name: '应激',
   description: '发送的内容中带有"哈气"时会使耄耋应激',
@@ -85,15 +67,28 @@ const yinjiCmd: Command = {
 const yinjiFac = CommandFactory.getInstance();
 yinjiFac.registry(yinjiCmd);
 
-
 // ========== 你不是我兄弟命令 ==========
 const notMyBrotherCmd: Command = {
   name: '你不是我兄弟',
   description: '你不是我兄弟',
   match: (session) => "不是兄弟".split("").every(t => session.textContent.includes(t)),
   handle: async () => {
-    return { type: 'message', items: [makeRandomResource('other', '你不是我兄弟')] };
+    return { type: 'message', items: [makeRandomResource('others', '你不是我兄弟')] };
   },
 };
 const notMyBrotherFac = CommandFactory.getInstance();
 notMyBrotherFac.registry(notMyBrotherCmd)
+
+// 音乐命令
+const musicCmd: Command = {
+  name: '音乐',
+  description: '音乐',
+  match: (session) => "来首歌".split("").every(t => session.textContent.includes(t)),
+  handle: async () => {
+    return { type: 'message', items: [makeRandomResource('music')] };
+  },
+}
+const musicFac = CommandFactory.getInstance()
+musicFac.registry(musicCmd)
+
+

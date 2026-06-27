@@ -29,7 +29,7 @@ async function bootstrap() {
 
   /**factory register */
   await Promise.all([
-    import('@/adapter'),
+    import('@/services'),
     import('@/commands'),
     import('@/filters'),
     import('@/schedules')
@@ -40,3 +40,6 @@ bootstrap().catch((err) => {
   logger.error('Fatal error:', err);
   process.exit(1);
 });
+
+
+
