@@ -1,7 +1,7 @@
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import { BeanFactory } from '@/core/bean'
-import type { Message } from '@/interface/messageReceiveType'
+import type { OneBotMessageReceive } from '@/interface/onebot'
 import { createLogger } from '@utils/logger'
 
 const factory = BeanFactory.getInstance()
@@ -52,7 +52,7 @@ export default class BotClient extends EventEmitter {
 
     this.ws.on('message', (data: string) => {
       try {
-        const jsonData: Message = JSON.parse(data)
+        const jsonData: OneBotMessageReceive = JSON.parse(data)
 
         // 触发通用消息事件，交由上层（App）处理过滤和分发
         this.emit('message', jsonData)

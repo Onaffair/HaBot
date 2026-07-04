@@ -1,11 +1,11 @@
 import BotClient from '@/utils/websocket'
 import { Command, CommandFactory } from './command'
 import { Session } from '../interface/session'
-import type { Message } from '@/interface/messageReceiveType'
+import { OneBotMessageReceive } from '@/interface/onebot'
 import { Filter, FilterFactory } from './filter'
 
 import { createLogger } from '@utils/logger'
-import { getMessageSendTypeInstance, MessageItemType } from '@/interface/MessageSendType'
+
 
 const logger = createLogger('App')
 
@@ -31,7 +31,7 @@ class App {
     // 监听所有消息，统一处理
     this.client.on('message', this.handleMessage.bind(this))
   }
-  private async handleMessage(data: Message) {
+  private async handleMessage(data: OneBotMessageReceive) {
     try {
       // 1. 过滤层校验
       const passed = this.filterFactory.handleMessage(data)

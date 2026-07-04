@@ -1,6 +1,6 @@
 import { BeanFactory } from "@/core/bean";
 import { Filter, FilterFactory } from "@/core/filter";
-import { Message } from "@/interface/messageReceiveType";
+import { OneBotMessageReceive } from "@/interface/onebot";
 import { createLogger } from '@utils/logger'
 
 const factory = BeanFactory.getInstance()
@@ -8,7 +8,7 @@ const logger = createLogger('ToMeFilter')
 
 const toMeFilter: Filter = {
   name: '艾特',
-  match: (message: Message) => {
+  match: (message: OneBotMessageReceive) => {
     // 私聊消息直接通过
     if (message.message_type === 'private') {
       logger.info("privateMsg", message.message);

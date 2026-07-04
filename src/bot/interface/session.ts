@@ -1,6 +1,6 @@
-import type { Message } from '@/interface/messageReceiveType'
+
 import OneBot from '@/api/common/oneBot'
-import { MessageItemType, GroupMessageSendType } from '@/interface/MessageSendType'
+import { MessageItem, GroupMessageSend, OneBotMessageReceive } from '@/interface/onebot'
 import { BeanFactory } from '@/core/bean'
 import type { GroupConfig } from '@/beans/group'
 import { ActionResult } from './actoin'
@@ -8,9 +8,9 @@ import { ActionResult } from './actoin'
 const factory = BeanFactory.getInstance()
 
 export class Session {
-  raw: Message
+  raw: OneBotMessageReceive
 
-  constructor(message: Message) {
+  constructor(message: OneBotMessageReceive) {
     this.raw = message
   }
 
@@ -55,7 +55,7 @@ export class Session {
     )
   }
 
-  async sendMessage(payload: GroupMessageSendType) {
+  async sendMessage(payload: GroupMessageSend) {
     // console.log(JSON.stringify(payload));
     if (this.raw.message_type == 'group') {
       return await OneBot.sendGroupMsg(payload as any)

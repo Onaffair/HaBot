@@ -1,7 +1,7 @@
-import { findTargetPersonByAI } from "@/api/ai/llm";
+
 import { BeanFactory } from '@/core/bean';
 import { Command, CommandFactory } from "@/core/command";
-import { MessageItemType } from "@/interface/MessageSendType";
+import { MessageItem, OB11MessageAt } from "@/interface/onebot";
 import { makeRandomResource } from "@/utils/message";
 import { createLogger } from '@utils/logger'
 import type { GroupConfig } from '@/beans/group';
@@ -28,8 +28,8 @@ const haqiCmd: Command = {
     const group = factory.getBeanValue<GroupConfig>('group')
     const members = group?.listen?.find(item => item.group_id == session.groupId?.toString())?.members
     const atItems = haList.map(index => {
-      const item = { type: 'at' as const, data: {} } as MessageItemType
-      item.data.qq = members?.[index]?.user_id || ''
+      const item = { type: 'at' as const, data: {} } as OB11MessageAt
+      item.data.qq = members?.[index]?.user_id.toString() || ''
       return item
     }).filter(item => item.data.qq)
     if (!atItems.length) return

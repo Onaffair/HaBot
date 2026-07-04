@@ -3,7 +3,6 @@ import OneBot from '@/api/common/oneBot';
 import { Command, CommandFactory } from '@/core/command';
 import { BeanFactory } from '@/core/bean';
 import { createLogger } from '@utils/logger';
-import { chatMemoryService } from '@/utils/chatMemory';
 import { judgeIsAtMe, makeTextMsg } from '@/utils/message';
 import { extractMessageContent } from '@/api/ai/llm';
 import type { AIChatConfig } from '@/beans/aiChat';
@@ -43,7 +42,7 @@ async function isReplyToBot(session: any): Promise<boolean> {
   if (!reply?.data?.id) return false;
   try {
     const resp = await OneBot.getMsg({ message_id: Number(reply.data.id) });
-    const target = resp?.data;
+    const target = resp;
     return target && String(target.user_id) === process.env.ME;
   } catch {
     return false;

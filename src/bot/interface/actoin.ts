@@ -1,8 +1,6 @@
-import { MessageItemType } from "./MessageSendType";
-
-
+import { MessageItem } from "./onebot";
 
 
 export type ActionResult =
-  | { type: 'message'; items: MessageItemType[] }
+  | { type: 'message'; items: MessageItem[] }
   | { type: 'forward-message'; data: { messages: any[] } }

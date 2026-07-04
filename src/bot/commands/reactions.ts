@@ -58,7 +58,7 @@ const yinjiCmd: Command = {
   priority: 0,
   match: (session) => session.textContent.includes('哈气'),
   handle: async (session) => {
-    const img = makeRandomResource('stress');
+    const img = makeRandomResource('bluelock');
     if (!img) return;
     const sender = session.userId;
     return { type: 'message', items: [makeAtMsg(sender), makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'), img] };

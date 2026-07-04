@@ -1,9 +1,9 @@
-import { Message } from "@/interface/messageReceiveType";
+import { OneBotMessageReceive } from "@/interface/onebot";
 import { createLogger } from "@/utils/logger";
 
 export interface Filter {
   name: string,
-  match: (message: Message) => boolean,
+  match: (message: OneBotMessageReceive) => boolean,
   handle?: () => void,
   description?: string,
 }
@@ -32,7 +32,7 @@ export class FilterFactory {
     return this.filters
   }
 
-  handleMessage(data: Message): boolean {
+  handleMessage(data: OneBotMessageReceive): boolean {
     return this.filters.every(filter => filter.match(data))
   }
 }

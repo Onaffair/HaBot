@@ -1,10 +1,11 @@
 import { Bean, BeanFactory } from "@/core/bean";
+import { OB11GroupMember } from "@/interface/onebot";
 import DatabaseService from "@/utils/db";
 
 export interface GroupConfig {
   listen?: Array<{
     group_id: string;
-    members: any[];
+    members: OB11GroupMember[];
   }>;
 }
 const groupBean: Bean<GroupConfig> = {

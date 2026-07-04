@@ -3,6 +3,7 @@ import { Schedule, ScheduleFactory } from "@/core/schedule";
 import OneBot from '@/api/common/oneBot';
 import { createLogger } from '@utils/logger';
 import type { GroupConfig } from '@/beans/group';
+import { OB11GroupMember } from '@/interface/onebot';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('SyncGroupMembers');
@@ -18,11 +19,10 @@ const syncGroupMembersSchedule: Schedule = {
       return;
     }
     const reqList: Promise<any>[] = [];
-
     group.listen.forEach((item) => {
       const res = OneBot.getGroupMemberList({ group_id: item.group_id })
         .then((resp) => {
-          const members = resp?.data || [];
+          const members = resp || [];
           item.members = [...members];
         })
         .catch((err) => {
