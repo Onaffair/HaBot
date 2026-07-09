@@ -1,12 +1,14 @@
 import { Command, CommandFactory } from "@/core/command";
 import { makeAtMsg, makeRandomResource, makeTextMsg } from "@/utils/message";
 import { createLogger } from "@utils/logger";
-import { arkNightArr, genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
+import { arkNightArr, foodArr, genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
+import { Entry, Redis } from "@/utils/redis";
 
 const logger = createLogger('Reactions');
 
 // ========== 工厂函数 ==========
 
+const fac = CommandFactory.getInstance()
 /** 创建关键词触发图片命令 */
 function createReaction(
   name: string,
@@ -25,7 +27,7 @@ function createReaction(
       return { type: 'message', items: [img] };
     },
   };
-  CommandFactory.getInstance().registry(cmd);
+  fac.registry(cmd);
   return cmd;
 }
 
@@ -48,8 +50,7 @@ const haqiVoiceCmd: Command = {
     return { type: 'message', items: [voice] };
   },
 };
-const haqiVoiceFac = CommandFactory.getInstance();
-haqiVoiceFac.registry(haqiVoiceCmd);
+fac.registry(haqiVoiceCmd);
 
 // ========== 应激命令 ==========
 const yinjiCmd: Command = {
@@ -64,8 +65,7 @@ const yinjiCmd: Command = {
     return { type: 'message', items: [makeAtMsg(sender), makeTextMsg('\n你刚才提到了哈气？\n还有什么比哈气更有意思的事情吗？'), img] };
   },
 };
-const yinjiFac = CommandFactory.getInstance();
-yinjiFac.registry(yinjiCmd);
+fac.registry(yinjiCmd);
 
 // ========== 你不是我兄弟命令 ==========
 const notMyBrotherCmd: Command = {
@@ -76,8 +76,8 @@ const notMyBrotherCmd: Command = {
     return { type: 'message', items: [makeRandomResource('others', '你不是我兄弟')] };
   },
 };
-const notMyBrotherFac = CommandFactory.getInstance();
-notMyBrotherFac.registry(notMyBrotherCmd)
+
+fac.registry(notMyBrotherCmd)
 
 // 音乐命令
 const musicCmd: Command = {
@@ -88,7 +88,47 @@ const musicCmd: Command = {
     return { type: 'message', items: [makeRandomResource('music')] };
   },
 }
-const musicFac = CommandFactory.getInstance()
-musicFac.registry(musicCmd)
+fac.registry(musicCmd)
 
 
+//吃什么命令
+const eatCmd: Command = {
+  name: '吃什么',
+  description: '你要吃什么？',
+  match: (session) => {
+    const redis = Redis.getInstance()
+    const key = `eat-${session.groupId}-${session.raw.sender}`
+    if (session.textContent === '吃什么') {
+      redis.set(key, true, 3 * 60 * 1000)
+      return true
+    } else if (session.textContent === '继续') {
+      const isExist = redis.get(key)
+      if (isExist) {
+        redis.set(key, true, 3 * 60 * 60)
+        return true
+      }
+    }
+    return false
+  },
+  handle: () => {
+    const foods = []
+    while (foods.length < 5) {
+      const len = foodArr.length
+      const food = foodArr[Math.floor(Math.random() * len)]
+      if (!foods.includes(food)) {
+        foods.push(food)
+      }
+    }
+    return {
+      type: 'message',
+      items: [
+        makeTextMsg(
+          `${foods.map((food, index) => `${index + 1}. ${food}`).join('\n')}
+发送继续以继续`
+        )
+      ]
+    }
+  },
+  priority: 1
+}
+fac.registry(eatCmd)

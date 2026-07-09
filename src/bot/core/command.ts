@@ -29,12 +29,14 @@ export class CommandFactory {
 
   registry(cmd: Command) {
     this.commands.push(cmd)
-    this.commands.sort((a, b) => a.priority - b.priority)
+    this.commands.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
     logger.info(`command ${cmd.name} registered`)
+    // console.log(this.commands.map(t => t?.priority).filter(t => t == 0 || t));
+
   }
 
   getCommand() {
-    return this.commands.sort((a, b) => b.priority - a.priority)
+    return this.commands.sort((a, b) => b?.priority - a?.priority)
   }
   async handleMessage(session: Session): Promise<ActionResult> | undefined | null {
     for (const cmd of this.commands) {

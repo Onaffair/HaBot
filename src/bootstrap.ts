@@ -5,9 +5,6 @@ import App from '@/core/app';
 import { BeanFactory } from '@/core/bean';
 const logger = createLogger('Bootstrap');
 
-
-
-
 /**
  * Bot系统启动
  * 1、数据库连接初始化

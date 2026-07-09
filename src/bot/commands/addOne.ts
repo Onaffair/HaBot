@@ -11,7 +11,7 @@ const redis = Redis.getInstance()
 class AddOneCmd implements Command {
   name = '+1'
   description = '群聊+1'
-  priority = 100
+  priority = 0
 
   match(session) {
     if (session.messageType != 'group') return false

@@ -1,6 +1,6 @@
-import { Bean, BeanFactory } from "@/core/bean";
+﻿import { Bean, BeanFactory } from "@/core/bean";
 import { OB11GroupMember } from "@/interface/onebot";
-import DatabaseService from "@/utils/db";
+import { groupListenService } from "@/services/db";
 
 export interface GroupConfig {
   listen?: Array<{
@@ -14,11 +14,7 @@ const groupBean: Bean<GroupConfig> = {
     listen: [],
   },
   init: async () => {
-    const db = DatabaseService.getInstance()
-    if (!db.groupListen) return;
-    const groups = await db.groupListen.findMany({
-      where: { enabled: true },
-    });
+    const groups = await groupListenService.findEnabled();
     const fac = BeanFactory.getInstance();
 
     fac.setBeanValue('group', {

@@ -12,13 +12,13 @@ request.interceptors.request.use(c => {
 })
 request.interceptors.response.use(
   res => {
-    const obResponse = res.data as OBResponse
-    if (obResponse.status !== 'ok') {
-      return Promise.reject(obResponse?.message)
+    const { status, data, message, wording, stream, retcode } = res.data as OBResponse
+    if (status !== 'ok') {
+      return Promise.reject({ message, retcode })
     }
-    return obResponse.data
+    return data
   },
-  err => Promise.reject(err.message)
+  err => Promise.reject(new Error(err?.message))
 )
 
 function get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
@@ -59,7 +59,7 @@ class OneBot {
     auto_escape?: boolean | string,
     source?: string,
     summary?: string,
-    prompt?: string,
+    prompt?: string, 
     timeout?: number,
   }) {
     return post('/send_group_msg', params)

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+﻿import { PrismaClient } from '@prisma/client'
 import { createLogger } from '@utils/logger'
 
 const logger = createLogger('DB')
@@ -63,6 +63,11 @@ class DatabaseService {
   /** Typed delegate: memory_summaries 表操作 */
   get memorySummary() {
     return this.prisma?.memorySummary
+  }
+
+  /** Typed delegate: user_blacklist 表操作 */
+  get userBlacklist() {
+    return this.prisma?.userBlacklist
   }
 }
 export default DatabaseService;

@@ -1,4 +1,4 @@
-interface Entry {
+export interface Entry {
   value: any,
   timer?: NodeJS.Timeout
 }

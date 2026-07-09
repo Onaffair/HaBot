@@ -51,3 +51,13 @@ model MemorySummary {
   @@index([groupId])
   @@map("memory_summaries")
 }
+
+// ========== 用户黑名单 ==========
+model UserBlacklist {
+  id        Int      @id @default(autoincrement())
+  qq        String   @unique // QQ号
+  reason    String?          // 拉黑原因
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("user_blacklist")
+}

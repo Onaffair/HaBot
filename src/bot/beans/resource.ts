@@ -1,5 +1,5 @@
-import { Bean, BeanFactory } from "@/core/bean";
-import DatabaseService from "@/utils/db";
+﻿import { Bean, BeanFactory } from "@/core/bean";
+import { resourceCategoryService } from "@/services/db";
 
 export interface ResourceConfig {
   path?: string;
@@ -17,9 +17,7 @@ const resourceBean: Bean<ResourceConfig> = {
     folder: [],
   },
   init: async () => {
-    const db = DatabaseService.getInstance()
-    if (!db.resourceCategory) return
-    const categories = await db.resourceCategory.findMany()
+    const categories = await resourceCategoryService.findAll()
     const fac = BeanFactory.getInstance()
 
     fac.setBeanValue('resource', {
