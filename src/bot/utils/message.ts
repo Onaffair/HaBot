@@ -1,6 +1,6 @@
 import { BeanFactory } from '@/core/bean';
 import { MessageItem, GroupMessageSend, OB11MessageImage, OB11MessageVideo, OB11MessageRecord } from "@/interface/onebot";
-import { Session } from "@/interface/session";
+import { Session } from "@/core/session";
 import { createLogger } from '@utils/logger'
 import type { ResourceConfig } from '@/beans/resource';
 

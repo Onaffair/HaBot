@@ -1,5 +1,6 @@
 import { downloadFromUrl, getVideoMetaInfo, getVideoUrl } from "@/api/common/online";
-import { VideoMeta, VideoPlatform, VideoSpider } from "../type";
+import { VideoMeta, VideoPlatform, VideoSpider, buildSpiderContent } from "../type";
+import { Session } from "@/core/session";
 import { createLogger } from "@/utils/logger";
 import { FFmpegTool } from "@/utils/ffmepg";
 
@@ -26,15 +27,15 @@ class BilibiliPlatform implements VideoPlatform {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
   }
 
-  match(text) {
+  match(session: Session) {
     return [
       'https://b23.tv/',
       'https://www.bilibili.com/video',
-    ].some(t => text.includes(t))
+    ].some(t => buildSpiderContent(session).includes(t))
   }
 
-  async handle(content): Promise<{ title: string, path: string }> {
-    let text = content
+  async handle(session: Session): Promise<{ title: string, path: string }> {
+    let text = buildSpiderContent(session)
     if (text.includes('https://b23.tv/')) {
       const redReg = /https?:\/\/b23\.tv\/[A-Za-z0-9]+/
       const match = text.match(redReg)

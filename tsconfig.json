@@ -10,7 +10,9 @@
       "@/*": ["src/bot/*"],
       "@config": ["src/bot.config.ts"],
       "@utils/*": ["src/bot/utils/*"],
-      "@resources/*": ["src/resources/*"]
+      "@resources/*": ["src/resources/*"],
+      "@ai": ["src/ai/index.ts"],
+      "@ai/*": ["src/ai/*"]
     },
     "strict": false,
     "esModuleInterop": true,

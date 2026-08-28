@@ -1,13 +1,13 @@
-﻿import { AIRequestManager, BaseMessage } from '@/services/ai';
+﻿import { AIRequestManager, BaseMessage } from '@ai';
 import OneBot from '@/api/common/oneBot';
 import { Command, CommandFactory } from '@/core/command';
 import { BeanFactory } from '@/core/bean';
 import { createLogger } from '@utils/logger';
 import { judgeIsAtMe, makeTextMsg } from '@/utils/message';
-import { extractMessageContent } from '@/api/ai/llm';
+import { extractMessageContent, extractMessageContentAsync } from '@/api/ai/llm';
 import type { AIChatConfig } from '@/beans/aiChat';
 import { ToolManager } from '@/services/agentTools/type';
-import { ChatCompletionMessageToolCall } from '@/services/ai/strategy/openai';
+import type { ChatCompletionMessageToolCall } from '@ai';
 
 const logger = createLogger('AIChat');
 const beanFactory = BeanFactory.getInstance();
@@ -63,19 +63,19 @@ async function buildMessages(session: any): Promise<BaseMessage[]> {
   const reply = session.message.find((m: any) => m.type === 'reply');
   if (reply?.data?.id) {
     try {
-      const resp = await OneBot.getMsg({ message_id: Number(reply.data.id) });
-      const targetMsg = resp?.data;
+      // getMsg 的拦截器已解包 data，返回的就是消息对象本身
+      const targetMsg = await OneBot.getMsg({ message_id: Number(reply.data.id) });
       if (targetMsg?.message) {
         messages.push({
           role: 'user',
-          content: extractMessageContent(targetMsg.message),
+          content: await extractMessageContentAsync(targetMsg.message),
         });
       }
     } catch { }
   }
   messages.push({
     role: 'user',
-    content: extractMessageContent(session.message),
+    content: await extractMessageContentAsync(session.message),
   });
 
   return messages;
@@ -101,16 +101,16 @@ const aiChatCmd: Command = {
 
     const llmMessages = await buildMessages(session);
     let messageHash = JSON.stringify(llmMessages)
+    logger.info('llmMessage',llmMessages)
     while (true) {
       const reply = await AIRequestManager.getInstance()
         .sendMessage('openai', llmMessages, {
-          aiOptions: {
-            tools: toolManager.toolList,
-            tool_choice: 'auto',
-          }
+          tools: toolManager.toolList,
+          tool_choice: 'auto',
         })
         .catch((e: any) => {
-          logger.error('AI chat failed:', e?.message);
+          const body = e?.response?.data;
+          logger.error('AI chat failed:', e?.message, body ? JSON.stringify(body) : '');
           return '';
         });
 

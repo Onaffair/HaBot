@@ -36,7 +36,8 @@
   "_moduleAliases": {
     "@": "dist/bot",
     "@config": "dist/bot.config.js",
-    "@utils": "dist/bot/utils"
+    "@utils": "dist/bot/utils",
+    "@ai": "dist/ai"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

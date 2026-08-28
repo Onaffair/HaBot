@@ -12,10 +12,10 @@ const videoDownloaderCmd: Command = {
   name: '视频分享下载',
   description: '下载转发过来的视频链接',
   match: (session) => {
-    return videoSpider.hasAnyMatch(session.textContent)
+    return videoSpider.hasAnyMatch(session)
   },
   handle: async (session) => {
-    const { title, path } = await videoSpider.handle(session.textContent)
+    const { title, path } = await videoSpider.handle(session)
     logger.info(`${title} has download in ${path}`)
     return { type: 'message', items: [makeVideoMsg(path), makeTextMsg(title)] }
   },

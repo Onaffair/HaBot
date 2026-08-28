@@ -1,4 +1,5 @@
-import { AIPlatform, AIRequestManager, BaseMessage, RequestOptions } from "../type";
+import { AIPlatform, AIRequestOptions, BaseMessage } from "../types";
+import { AIRequestManager } from "../manager";
 
 export type ChatCompletionChoicesData = {
   message?: {
@@ -99,7 +100,7 @@ class OpenAIPlatform implements AIPlatform {
   private stream = false
   private maxTokens = 100000
 
-  adapter(messages: BaseMessage[], options?: RequestOptions) {
+  adapter(messages: BaseMessage[], options?: AIRequestOptions) {
     return {
       headers: {
         Authorization: `Bearer ${this.secret}`,
@@ -109,7 +110,7 @@ class OpenAIPlatform implements AIPlatform {
         model: this.model,
         max_tokens: this.maxTokens,
         stream: this.stream,
-        ...options?.aiOptions,
+        ...options,
         messages: messages.map(message => {
           const { role, content } = message
           return {

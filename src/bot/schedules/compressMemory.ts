@@ -1,4 +1,4 @@
-﻿import { AIRequestManager, BaseMessage } from '@/services/ai';
+﻿import { AIRequestManager, BaseMessage } from '@ai';
 import { BeanFactory } from '@/core/bean';
 import { Schedule, ScheduleFactory } from '@/core/schedule';
 import { createLogger } from '@utils/logger';

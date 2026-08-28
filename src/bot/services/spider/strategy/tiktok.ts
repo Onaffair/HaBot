@@ -1,4 +1,5 @@
-﻿import { VideoPlatform, VideoSpider } from "../type";
+﻿import { VideoPlatform, VideoSpider, buildSpiderContent } from "../type";
+import { Session } from "@/core/session";
 import { createLogger } from "@/utils/logger";
 import { FFmpegTool } from "@/utils/ffmepg";
 import { downloadFromUrl } from "@/api/common/online";
@@ -7,15 +8,15 @@ import { PlaywrightManager } from "@/utils/playwright";
 const logger = createLogger("TiktokPlatform");
 class TiktokPlatform implements VideoPlatform {
   name = "tiktok";
-  match(text) {
+  match(session: Session) {
     return [
       "https://www.douyin.com/video/",
       "https://v.douyin.com/",
-    ].some((t) => text.includes(t));
+    ].some((t) => buildSpiderContent(session).includes(t));
   }
 
-  async handle(text: string): Promise<{ title: string; path: string }> {
-    const shareUrl = this.extractUrl(text);
+  async handle(session: Session): Promise<{ title: string; path: string }> {
+    const shareUrl = this.extractUrl(buildSpiderContent(session));
     if (!shareUrl) {
       throw new Error("no titok videoUrl");
     }

@@ -1,4 +1,4 @@
-import { Session } from '../interface/session'
+import { Session } from './session'
 import { ActionResult } from '../interface/actoin'
 import { createLogger } from '@/utils/logger';
 

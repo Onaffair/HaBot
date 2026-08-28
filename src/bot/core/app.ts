@@ -1,6 +1,6 @@
 import BotClient from '@/utils/websocket'
 import { Command, CommandFactory } from './command'
-import { Session } from '../interface/session'
+import { Session } from './session'
 import { OneBotMessageReceive } from '@/interface/onebot'
 import { Filter, FilterFactory } from './filter'
 
@@ -37,6 +37,7 @@ class App {
       const passed = this.filterFactory.handleMessage(data)
       if (!passed) return 
       const session = new Session(data)
+      logger.info('message',session.raw)
       // 2. 命令层执行
       const action = await this.commandFactory.handleMessage(session)
       if (!action) return

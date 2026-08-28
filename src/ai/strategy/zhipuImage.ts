@@ -1,4 +1,5 @@
-import { AIPlatform, AIRequestManager, BaseMessage, RequestOptions } from "../type";
+import { AIPlatform, AIRequestOptions, BaseMessage } from "../types";
+import { AIRequestManager } from "../manager";
 
 class ZhipuImagePlatform implements AIPlatform {
   name = 'zhipu'
@@ -6,7 +7,7 @@ class ZhipuImagePlatform implements AIPlatform {
   url = process.env.ZHIPUAI_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/images/generations'
   secret = process.env.ZHIPUAI_API_KEY || ''
 
-  adapter(messages: BaseMessage[], options?: RequestOptions) {
+  adapter(messages: BaseMessage[], options?: AIRequestOptions) {
     // 图片生成没有 messages 概念，将所有 text 内容拼接为 prompt 字符串
     const prompt = messages
       .flatMap(msg => msg.content)
@@ -22,7 +23,7 @@ class ZhipuImagePlatform implements AIPlatform {
       body: {
         model: this.model,
         prompt,
-        ...options?.aiOptions,
+        ...options,
       },
     }
   }

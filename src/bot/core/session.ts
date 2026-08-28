@@ -3,7 +3,7 @@ import OneBot from '@/api/common/oneBot'
 import { MessageItem, GroupMessageSend, OneBotMessageReceive } from '@/interface/onebot'
 import { BeanFactory } from '@/core/bean'
 import type { GroupConfig } from '@/beans/group'
-import { ActionResult } from './actoin'
+import { ActionResult } from '../interface/actoin'
 
 const factory = BeanFactory.getInstance()
 
@@ -53,6 +53,19 @@ export class Session {
         .join('')
         .trim() || ''
     )
+  }
+
+  /** 解析 json 消息段（如 QQ 小程序分享），返回还原转义后的 payload 列表 */
+  get jsonPayloads(): any[] {
+    const payloads: any[] = []
+    for (const item of this.raw.message ?? []) {
+      if (item.type !== 'json') continue
+      try {
+        const payload = JSON.parse(item.data?.data as string)
+        if (payload) payloads.push(payload)
+      } catch { /* 解析失败忽略 */ }
+    }
+    return payloads
   }
 
   async sendMessage(payload: GroupMessageSend) {

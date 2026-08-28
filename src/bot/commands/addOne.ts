@@ -1,6 +1,6 @@
 import { Command, CommandFactory } from "@/core/command";
 import { ActionResult } from "@/interface/actoin";
-import { Session } from "@/interface/session";
+import { Session } from "@/core/session";
 import { createLogger } from "@/utils/logger";
 import { Redis } from "@/utils/redis";
 
