@@ -24,7 +24,7 @@ const refreshBGSchedule: Schedule = {
     }
   },
 };
-const fac = ScheduleFactory.getInstance();
-fac.registry(refreshBGSchedule);
+// const fac = ScheduleFactory.getInstance();
+// fac.registry(refreshBGSchedule);
 
 export default refreshBGSchedule;
