@@ -16,15 +16,6 @@ model GroupListen {
   @@map("group_listens")
 }
 
-// ========== 资源分类 ==========
-model ResourceCategory {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  path        String
-  description String?
-  @@map("resource_categories")
-}
-
 // ========== 对话记忆 ==========
 model ChatMemory {
   id        Int      @id @default(autoincrement())
@@ -60,4 +51,51 @@ model UserBlacklist {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("user_blacklist")
+}
+
+// ========== 文件夹管理：资源段 ==========
+// 每条记录对应一个"资源段"，直接记录本地资源的完整目录路径
+model ManagedResource {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // 资源名称
+  path        String   // 资源所在完整目录路径
+  keywords    String   @default("[]") // 触发关键词，JSON 数组字符串，如 ["原神","甘雨"]
+  description String? // 资源描述
+  enabled     Boolean  @default(true) // 是否启用
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("managed_resources")
+}
+
+// ========== 文件夹管理：全局设置（键值对） ==========
+// 用于存储"默认管理目录"等系统级配置
+model ResourceSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique // 如 defaultDir
+  value String // 目录路径
+
+  @@map("resource_settings")
+}
+
+// ========== 触发规则（自定义命令） ==========
+// 用于配置非"关键词泛化"的特殊触发命令（哈个气/音乐/你不是我兄弟等），
+// 支持不同的匹配方式，并可从数据库动态注册到命令系统。
+model CommandRule {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique // 命令名，如 "哈个气"
+  description  String? // 命令描述
+  enabled      Boolean  @default(true) // 是否启用
+  // 匹配方式：exact=文本完全等于任一关键词 / contains=文本包含任一关键词子串 / chars=任一关键词的每个字都出现在文本中
+  matchType    String   @default("contains") @map("match_type") // 'exact' | 'contains' | 'chars'
+  keywords     String   @default("[]") // 触发关键词，JSON 数组字符串
+  // 发送资源来源：指向 managed_resources 中某个资源段的 name（如 voice_haqi / music / brother）
+  resourceName String   @map("resource_name")
+  // 可选：在资源目录内按文件名包含该子串过滤到特定文件（如 "你不是我兄弟"）
+  fileFilter   String?  @map("file_filter")
+  priority     Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("command_rules")
 }

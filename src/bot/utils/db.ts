@@ -50,11 +50,6 @@ class DatabaseService {
     return this.prisma?.groupListen
   }
 
-  /** Typed delegate: resource_categories 表操作 */
-  get resourceCategory() {
-    return this.prisma?.resourceCategory
-  }
-
   /** Typed delegate: chat_memories 表操作 */
   get chatMemory() {
     return this.prisma?.chatMemory
@@ -68,6 +63,21 @@ class DatabaseService {
   /** Typed delegate: user_blacklist 表操作 */
   get userBlacklist() {
     return this.prisma?.userBlacklist
+  }
+
+  /** Typed delegate: managed_resources 表操作 */
+  get managedResource() {
+    return this.prisma?.managedResource
+  }
+
+  /** Typed delegate: resource_settings 表操作 */
+  get resourceSetting() {
+    return this.prisma?.resourceSetting
+  }
+
+  /** Typed delegate: command_rules 表操作 */
+  get commandRule() {
+    return this.prisma?.commandRule
   }
 }
 export default DatabaseService;

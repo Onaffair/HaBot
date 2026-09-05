@@ -3,6 +3,7 @@ import { createLogger } from "@/utils/logger";
 import { makeTextMsg } from "@/utils/message";
 import { PlaywrightManager } from "@/utils/playwright";
 import { MessageItem } from "@/interface/onebot";
+import { isBlockedUrl } from "@/utils/webShotBlacklist";
 
 const logger = createLogger('webScreenshot')
 
@@ -21,6 +22,16 @@ const webScreenshotCmd: Command = {
   handle: async (session) => {
     const url = session.textContent.match(URL_PATTERN)?.[0]
     if (!url) return
+
+    // 命中黑名单域名的链接不截图
+    const block = isBlockedUrl(url)
+    if (block.blocked) {
+      logger.info(`blocked url, domain in blacklist: ${url} (rule: ${block.matched})`)
+      return {
+        type: 'message',
+        items: [makeTextMsg(`该域名（${block.matched}）已被屏蔽，不予截图。`)]
+      }
+    }
 
     logger.info(`start screenshot: ${url}`)
     try {

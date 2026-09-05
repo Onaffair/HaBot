@@ -1,4 +1,22 @@
 ﻿import { Browser, Page, BrowserContext } from "playwright";
+import { existsSync } from "fs";
+
+/** 探测本机已安装的 Chrome 可执行文件路径,未找到则返回 undefined(由 Playwright 自行处理) */
+function resolveChromeExecutablePath(): string | undefined {
+  const candidates = [
+    process.env.PROGRAMFILES &&
+      `${process.env.PROGRAMFILES}/Google/Chrome/Application/chrome.exe`,
+    process.env["PROGRAMFILES(X86)"] &&
+      `${process.env["PROGRAMFILES(X86)"]}/Google/Chrome/Application/chrome.exe`,
+    process.env.LOCALAPPDATA &&
+      `${process.env.LOCALAPPDATA}/Google/Chrome/Application/chrome.exe`,
+    // 兜底常用固定路径
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+  ].filter(Boolean) as string[];
+
+  return candidates.find((p) => existsSync(p));
+}
 
 export class PlaywrightManager {
   private static instance: PlaywrightManager | null = null;
@@ -22,7 +40,11 @@ export class PlaywrightManager {
   async getBrowser(): Promise<Browser> {
     if (!this.browser || !this.browser.isConnected()) {
       const { chromium } = await import("playwright");
-      this.browser = await chromium.launch({ headless: true });
+      const executablePath = resolveChromeExecutablePath();
+      this.browser = await chromium.launch({
+        ...(executablePath ? { executablePath } : {}),
+        headless: true,
+      });
     }
     return this.browser;
   }

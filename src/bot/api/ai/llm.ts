@@ -1,12 +1,45 @@
 import { Session } from "@/core/session";
-import { OneBotMessageReceive, MessageItem, GroupUserInfo } from "@/interface/onebot";
+import { OneBotMessageReceive, MessageItem, GroupUserInfo, OB11MessageMixType } from "@/interface/onebot";
 import axios from "axios";
 import { ossService } from "@/utils/OSS";
 import type { BaseMessage, BaseMessageContent } from "@ai";
 
 // ========== 共享工具：将群聊消息项转换为统一内容格式 ==========
+
+/** 递归展开的最大深度，防止畸形/循环数据导致无限递归 */
+const MAX_FLATTEN_DEPTH = 10;
+
+/** 判断一个值是否为合法的消息段对象 */
+function isMessageItem(value: unknown): value is MessageItem {
+  return !!value && typeof value === 'object' &&
+    typeof (value as { type?: unknown }).type === 'string';
+}
+
+/**
+ * node / forward 的 content 可能是 纯文本字符串 / 单条消息段 / 消息段数组，
+ * 统一归一化为消息段数组以便递归展开。
+ */
+function toItemArray(content: OB11MessageMixType | null | undefined): MessageItem[] {
+  if (content == null) return [];
+  if (typeof content === 'string') {
+    // 纯文本型节点：拼成一个 text 消息段
+    return content ? [{ type: 'text', data: { text: content } } as MessageItem] : [];
+  }
+  if (Array.isArray(content)) {
+    return content.filter(isMessageItem);
+  }
+  return isMessageItem(content) ? [content] : [];
+}
+
 export function extractMessageContent(items: MessageItem[]): BaseMessageContent[] {
   const result: BaseMessageContent[] = [];
+  appendItems(result, items, 0);
+  return result;
+}
+
+/** 同步：逐条解析消息段，遇 forward/node 递归展开 */
+function appendItems(result: BaseMessageContent[], items: MessageItem[], depth: number): void {
+  if (depth > MAX_FLATTEN_DEPTH) return;
   for (const item of items) {
     switch (item.type) {
       case 'text':
@@ -21,17 +54,16 @@ export function extractMessageContent(items: MessageItem[]): BaseMessageContent[
       case 'video':
         result.push({ type: 'video', url: item.data.url });
         break;
+      // 合并转发：其 content 一般是若干 node，需逐条下钻
       case 'forward':
-        result.push(...extractMessageContent(item.data.content ?? []))
-        // if (item.data.content) {
-          // for (const msg of item.data.content) {
-          //   result.push(...extractMessageContent(msg ?? []));
-          // }
-        // }
+        appendItems(result, toItemArray(item.data.content), depth + 1);
+        break;
+      // 转发节点：真正的内层内容在 node.data.content 中，可能是文本/单条/数组/更深层 forward
+      case 'node':
+        appendItems(result, toItemArray(item.data.content), depth + 1);
         break;
     }
   }
-  return result;
 }
 
 /** QQ 图片 CDN 域名（此类链接带 rkey 短时效，外部服务无法稳定访问） */
@@ -63,6 +95,13 @@ async function stabilizeImageUrl(url: string): Promise<string> {
 /** 异步版：额外将 QQ CDN 图片 URL 稳定化后用于 LLM 请求 */
 export async function extractMessageContentAsync(items: MessageItem[]): Promise<BaseMessageContent[]> {
   const result: BaseMessageContent[] = [];
+  await appendItemsAsync(result, items, 0);
+  return result;
+}
+
+/** 异步：逐条解析消息段，遇 forward/node 递归展开（图片 URL 做稳定化） */
+async function appendItemsAsync(result: BaseMessageContent[], items: MessageItem[], depth: number): Promise<void> {
+  if (depth > MAX_FLATTEN_DEPTH) return;
   for (const item of items) {
     switch (item.type) {
       case 'text':
@@ -78,11 +117,13 @@ export async function extractMessageContentAsync(items: MessageItem[]): Promise<
         result.push({ type: 'video', url: item.data.url });
         break;
       case 'forward':
-        result.push(...await extractMessageContentAsync(item.data.content ?? []));
+        await appendItemsAsync(result, toItemArray(item.data.content), depth + 1);
+        break;
+      case 'node':
+        await appendItemsAsync(result, toItemArray(item.data.content), depth + 1);
         break;
     }
   }
-  return result;
 }
 
 

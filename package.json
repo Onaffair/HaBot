@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "ts-node -r tsconfig-paths/register src/bootstrap.ts",
     "dev:legacy": "ts-node -r tsconfig-paths/register src/bot/index.ts",
+    "dev:backend": "ts-node -r tsconfig-paths/register src/back/index.ts",
+    "dev:frontend": "npm run dev --prefix src/front",
+    "dev:all": "concurrently -k -n bot,backend,frontend -c cyan,yellow,magenta \"npm:dev\" \"npm:dev:backend\" \"npm:dev:frontend\"",
     "migrate": "ts-node -r tsconfig-paths/register scripts/migrateEnvToDb.ts",
+    "migrate:trigger": "ts-node -r tsconfig-paths/register scripts/migrateTriggerKeywords.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
@@ -42,6 +46,7 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/ws": "^8.5.12",
+    "concurrently": "^10.0.5",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",

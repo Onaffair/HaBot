@@ -41,10 +41,6 @@ app.listen(PORT, () => {
   logger.info(`  POST   /api/group-listens          - 添加监听群组`);
   logger.info(`  PUT    /api/group-listens/:groupId - 更新监听群组`);
   logger.info(`  DELETE /api/group-listens/:groupId - 删除监听群组`);
-  logger.info(`  GET    /api/resource-categories     - 资源分类列表`);
-  logger.info(`  POST   /api/resource-categories     - 创建资源分类`);
-  logger.info(`  PUT    /api/resource-categories/:id - 更新资源分类`);
-  logger.info(`  DELETE /api/resource-categories/:id - 删除资源分类`);
   logger.info(`  GET    /api/chat-memories           - 对话记忆列表`);
   logger.info(`  POST   /api/chat-memories           - 创建对话记忆`);
   logger.info(`  DELETE /api/chat-memories/:id       - 删除对话记忆`);
@@ -54,4 +50,15 @@ app.listen(PORT, () => {
   logger.info(`  POST   /api/user-blacklist          - 添加黑名单`);
   logger.info(`  PUT    /api/user-blacklist/:qq      - 更新黑名单`);
   logger.info(`  DELETE /api/user-blacklist/:qq      - 移出黑名单`);
+  logger.info(`  GET    /api/managed-resources       - 资源段列表`);
+  logger.info(`  POST   /api/managed-resources       - 创建资源段`);
+  logger.info(`  PUT    /api/managed-resources/:id   - 更新资源段`);
+  logger.info(`  DELETE /api/managed-resources/:id   - 删除资源段`);
+  logger.info(`  GET/PUT /api/resource-settings/default-dir - 默认管理目录`);
+  logger.info(`  GET    /api/filesystem/dirs         - 浏览服务器目录(子目录)`);
+  logger.info(`  GET    /api/filesystem/roots        - 目录树初始根`);
+  logger.info(`  GET    /api/command-rules           - 触发规则列表`);
+  logger.info(`  POST   /api/command-rules           - 创建触发规则`);
+  logger.info(`  PUT    /api/command-rules/:id       - 更新触发规则`);
+  logger.info(`  DELETE /api/command-rules/:id       - 删除触发规则`);
 });

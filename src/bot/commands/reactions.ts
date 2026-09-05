@@ -1,58 +1,112 @@
 import { Command, CommandFactory } from "@/core/command";
 import { makeAtMsg, makeRandomResource, makeTextMsg } from "@/utils/message";
 import { createLogger } from "@utils/logger";
-import { arkNightArr, foodArr, genshinArr, mcArr, starTrailArr, yysArr } from "@/config";
-import { Entry, Redis } from "@/utils/redis";
+import { foodArr } from "@/config";
+import { managedResourceService, commandRuleService } from "@/services/db";
+import { Redis } from "@/utils/redis";
+import type { CommandRule } from "@/services/db/commandRule";
 
 const logger = createLogger('Reactions');
 
-// ========== 工厂函数 ==========
-
 const fac = CommandFactory.getInstance()
-/** 创建关键词触发图片命令 */
-function createReaction(
-  name: string,
-  description: string,
-  keywords: string[],
-  resourceName: string,
-): Command {
-  const cmd: Command = {
-    name,
-    description,
-    match: (session) => keywords.some((k) => session.textContent.includes(k)),
-    handle: async () => {
-      const img = makeRandomResource(resourceName);
-      if (!img) return;
-      logger.info(`[${name}] Sending image: ${img.data.file}`);
-      return { type: 'message', items: [img] };
-    },
-  };
-  fac.registry(cmd);
-  return cmd;
+
+// ======================================================================
+// 通用匹配逻辑
+// ======================================================================
+
+/**
+ * 根据触发规则匹配一条消息。
+ *   exact    -> 文本完全等于任一关键词
+ *   chars    -> 任一关键词的每个字符都出现在文本中（无序包含，兼容"来首歌/不是兄弟"）
+ *   contains -> 文本包含任一关键词子串（默认）
+ */
+function matchRuleText(text: string, rule: CommandRule): boolean {
+  const keywords = (rule.keywords || []).filter((k) => k && k.trim())
+  if (keywords.length === 0) return false
+  switch (rule.matchType) {
+    case 'exact':
+      return keywords.some((k) => text === k)
+    case 'chars':
+      return keywords.some((k) => Array.from(k).every((ch) => text.includes(ch)))
+    case 'contains':
+    default:
+      return keywords.some((k) => text.includes(k))
+  }
 }
 
-// ========== 反应命令 ==========
-const genshinCmd = createReaction('genshin', '原神', genshinArr, '原神');
-const mcCmd = createReaction('mc', '鸣潮', mcArr, '鸣潮');
-// const yysCmd = createGameReaction('yys', '阴阳师', yysArr, '阴阳师');
-const starTrailCmd = createReaction('星铁', '星铁', starTrailArr, '星铁');
-const haqiCmd = createReaction('哈气', '哈气', ['哈气'], 'cat')
-// const arkNightCmd = createGameReaction('明日方舟','明日方舟',arkNightArr,'明日方舟')
+// ======================================================================
+// 动态注册一：为每个「已启用 且 携带触发关键词」的资源段(目录管理)
+// 注册一个"关键词触发随机资源"命令。数据源 managed_resources。
+// ======================================================================
+function registerResourceReactions(): void {
+  void (async () => {
+    try {
+      const resources = await managedResourceService.findEnabled()
+      let count = 0
+      for (const r of resources) {
+        const keywords = (r.keywords || []).filter((k) => k && k.trim())
+        if (keywords.length === 0) continue // 无关键词则无法触发，跳过
 
-// ========== 哈个气命令 ==========
-const haqiVoiceCmd: Command = {
-  name: '哈个气',
-  description: '发送"哈个气"可以让耄耋语音哈气',
-  match: (session) => session.textContent === '哈个气',
-  handle: async () => {
-    const voice = makeRandomResource('cat_voice');
-    if (!voice) return;
-    return { type: 'message', items: [voice] };
-  },
-};
-fac.registry(haqiVoiceCmd);
+        const cmd: Command = {
+          name: r.name,
+          description: r.description || r.name,
+          match: (session) => keywords.some((k) => session.textContent.includes(k)),
+          handle: async () => {
+            const img = makeRandomResource(r.name);
+            if (!img) return;
+            logger.info(`[${r.name}] Sending image: ${img.data.file}`);
+            return { type: 'message', items: [img] };
+          },
+        };
+        fac.registry(cmd);
+        count++
+      }
+      logger.info(`Dynamic resource reactions registered: ${count} resource(s)`)
+    } catch (e) {
+      logger.error('Failed to load managed resources for reactions:', e)
+    }
+  })()
+}
 
-// ========== 应激命令 ==========
+// ======================================================================
+// 动态注册二：为每个「已启用的触发规则」注册自定义命令。
+// 数据源 command_rules（哈个气/音乐/你不是我兄弟等均作为一条规则）。
+// ======================================================================
+function registerCommandRuleReactions(): void {
+  void (async () => {
+    try {
+      const rules = await commandRuleService.findEnabled()
+      let count = 0
+      for (const rule of rules) {
+        if (!rule.resourceName) continue
+        const cmd: Command = {
+          name: rule.name,
+          description: rule.description || rule.name,
+          priority: rule.priority,
+          match: (session) => matchRuleText(session.textContent, rule),
+          handle: async () => {
+            // 若配置了 fileFilter 则定位到目录内特定文件，否则随机取一个
+            const item = makeRandomResource(rule.resourceName, rule.fileFilter || undefined);
+            if (!item) return;
+            logger.info(`[${rule.name}] Sending resource: ${item.data.file}`);
+            return { type: 'message', items: [item] };
+          },
+        };
+        fac.registry(cmd);
+        count++
+      }
+      logger.info(`Dynamic command-rule reactions registered: ${count} rule(s)`)
+    } catch (e) {
+      logger.error('Failed to load command rules for reactions:', e)
+    }
+  })()
+}
+
+// 模块加载时从数据库读取并动态注册
+registerResourceReactions()
+registerCommandRuleReactions()
+
+// ========== 应激命令（保留：需 @成员 + 文本的复合行为） ==========
 const yinjiCmd: Command = {
   name: '应激',
   description: '发送的内容中带有"哈气"时会使耄耋应激',
@@ -67,31 +121,7 @@ const yinjiCmd: Command = {
 };
 fac.registry(yinjiCmd);
 
-// ========== 你不是我兄弟命令 ==========
-const notMyBrotherCmd: Command = {
-  name: '你不是我兄弟',
-  description: '你不是我兄弟',
-  match: (session) => "不是兄弟".split("").every(t => session.textContent.includes(t)),
-  handle: async () => {
-    return { type: 'message', items: [makeRandomResource('others', '你不是我兄弟')] };
-  },
-};
-
-fac.registry(notMyBrotherCmd)
-
-// 音乐命令
-const musicCmd: Command = {
-  name: '音乐',
-  description: '音乐',
-  match: (session) => "来首歌".split("").every(t => session.textContent.includes(t)),
-  handle: async () => {
-    return { type: 'message', items: [makeRandomResource('music')] };
-  },
-}
-fac.registry(musicCmd)
-
-
-//吃什么命令
+// ========== 吃什么命令（保留：依赖 Redis 的状态机） ==========
 const eatCmd: Command = {
   name: '吃什么',
   description: '你要吃什么？',

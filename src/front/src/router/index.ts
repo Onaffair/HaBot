@@ -22,10 +22,16 @@ const router = createRouter({
           meta: { title: '监听群组' }
         },
         {
-          path: 'resource-categories',
-          name: 'ResourceCategory',
-          component: () => import('../views/ResourceCategory.vue'),
-          meta: { title: '资源分类' }
+          path: 'managed-resources',
+          name: 'ManagedResource',
+          component: () => import('../views/ManagedResource.vue'),
+          meta: { title: '目录管理' }
+        },
+        {
+          path: 'command-rules',
+          name: 'CommandRule',
+          component: () => import('../views/CommandRule.vue'),
+          meta: { title: '触发规则' }
         },
         {
           path: 'chat-memories',

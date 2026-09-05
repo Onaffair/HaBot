@@ -20,9 +20,13 @@
           <el-icon><Headset /></el-icon>
           <span>监听群组</span>
         </el-menu-item>
-        <el-menu-item index="/resource-categories">
-          <el-icon><FolderOpened /></el-icon>
-          <span>资源分类</span>
+        <el-menu-item index="/managed-resources">
+          <el-icon><FolderAdd /></el-icon>
+          <span>目录管理</span>
+        </el-menu-item>
+        <el-menu-item index="/command-rules">
+          <el-icon><SetUp /></el-icon>
+          <span>触发规则</span>
         </el-menu-item>
         <el-menu-item index="/chat-memories">
           <el-icon><ChatDotSquare /></el-icon>
@@ -55,7 +59,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  HomeFilled, Headset, FolderOpened,
+  HomeFilled, Headset, FolderAdd, SetUp,
   ChatDotSquare, Document, CircleCloseFilled
 } from '@element-plus/icons-vue'
 

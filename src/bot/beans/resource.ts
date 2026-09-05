@@ -1,11 +1,13 @@
 ﻿import { Bean, BeanFactory } from "@/core/bean";
-import { resourceCategoryService } from "@/services/db";
+import { managedResourceService } from "@/services/db";
 
 export interface ResourceConfig {
   path?: string;
   folder?: Array<{
     name: string;
     path: string;
+    keywords?: string[];
+    enabled?: boolean;
     children: Array<any>
   }>;
 }
@@ -17,14 +19,16 @@ const resourceBean: Bean<ResourceConfig> = {
     folder: [],
   },
   init: async () => {
-    const categories = await resourceCategoryService.findAll()
+    const resources = await managedResourceService.findEnabled()
     const fac = BeanFactory.getInstance()
 
     fac.setBeanValue('resource', {
       path: process.env.RESOURCE_PATH,
-      folder: categories.map((item) => ({
+      folder: resources.map((item) => ({
         name: item.name,
         path: item.path,
+        keywords: item.keywords,
+        enabled: true,
         children: [],
       })),
     })

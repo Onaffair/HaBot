@@ -9,13 +9,15 @@ const factory = BeanFactory.getInstance()
 const logger = createLogger('RefreshResources');
 
 function loadLocalResources(folders: { name: string; path?: string; children?: string[] }[]) {
-  const resolvedBasePath = path.resolve(process.cwd(), process.env.RESOURCE_PATH);
+  const resolvedBasePath = path.resolve(process.cwd(), process.env.RESOURCE_PATH || '');
   
   for (const folder of folders) {
-    const subPath = folder.path || folder.name;
-    const folderPath = path.join(resolvedBasePath, subPath);
+    // 目录管理：folder.path 为完整绝对路径；若为相对路径则兼容旧逻辑拼接到 RESOURCE_PATH 下
+    const folderPath = folder.path && path.isAbsolute(folder.path)
+      ? folder.path
+      : path.join(resolvedBasePath, folder.path || folder.name);
 
-    if (fs.existsSync(folderPath)) {
+    if (fs.existsSync(folderPath) && fs.statSync(folderPath).isDirectory()) {
       const files = fs.readdirSync(folderPath);
       const validFiles: string[] = [];
       for (const file of files) {
@@ -25,7 +27,7 @@ function loadLocalResources(folders: { name: string; path?: string; children?: s
         }
       }
       folder.children = validFiles;
-      logger.info(`Loaded ${validFiles.length} resources for ${folder.name}`);
+      logger.info(`Loaded ${validFiles.length} resources for ${folder.name} (${folderPath})`);
     } else {
       logger.warn(`Resource folder not found: ${folderPath}`);
     }
