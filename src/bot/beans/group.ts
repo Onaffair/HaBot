@@ -1,6 +1,6 @@
-﻿import { Bean, BeanFactory } from "@/core/bean";
+﻿import { Bean } from "@/core/bean";
 import { OB11GroupMember } from "@/interface/onebot";
-import { groupListenService } from "@/services/db";
+import { runtime } from "@/core/runtime";
 
 export interface GroupConfig {
   listen?: Array<{
@@ -8,20 +8,13 @@ export interface GroupConfig {
     members: OB11GroupMember[];
   }>;
 }
-const groupBean: Bean<GroupConfig> = {
+export const groupBean: Bean<GroupConfig> = {
   name: 'group',
   value: {
     listen: [],
   },
   init: async () => {
-    const groups = await groupListenService.findEnabled();
-    const fac = BeanFactory.getInstance();
-
-    fac.setBeanValue('group', {
-      listen: groups.map((item) => ({ group_id: item.groupId, members: [] })),
-    });
-    
+    // 以 group_listens 初始化监听群；运行期由后端直调 core/runtime 统一刷新
+    await runtime.refreshGroups();
   }
 };
-const factory = BeanFactory.getInstance();
-factory.registry(groupBean);

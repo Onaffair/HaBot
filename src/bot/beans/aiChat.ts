@@ -1,4 +1,4 @@
-import { Bean, BeanFactory } from '@/core/bean';
+import { Bean } from '@/core/bean';
 
 export interface AIChatConfig {
   enabled: boolean;
@@ -12,5 +12,3 @@ export const aiChatBean: Bean<AIChatConfig> = {
     recentCount: 20,
   },
 };
-
-BeanFactory.getInstance().registry(aiChatBean);

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { Express, Request, Response } from 'express';
 import { managedResourceService, resourceSettingService } from '../../bot/services/db';
+import { runtime } from '../../bot/core/runtime';
 
 export const DEFAULT_DIR_KEY = 'defaultDir';
 
@@ -49,6 +50,7 @@ export function createManagedResourceRoutes(app: Express) {
         description,
         enabled,
       });
+      if (record) void runtime.upsertResource(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -69,6 +71,7 @@ export function createManagedResourceRoutes(app: Express) {
         description,
         enabled,
       });
+      if (record) void runtime.upsertResource(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -82,6 +85,7 @@ export function createManagedResourceRoutes(app: Express) {
       const record = await managedResourceService.update(parseInt(req.params.id as string), {
         enabled,
       });
+      if (record) void runtime.upsertResource(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -91,7 +95,11 @@ export function createManagedResourceRoutes(app: Express) {
   // 删除资源段
   app.delete(`${prefix}/:id`, async (req: Request, res: Response) => {
     try {
-      await managedResourceService.delete(parseInt(req.params.id as string));
+      const id = parseInt(req.params.id as string);
+      // 删除即彻底移除，先取原记录以便通知 bot 精确剔除对应的命令与 folder
+      const existed = await managedResourceService.findById(id);
+      await managedResourceService.delete(id);
+      if (existed) void runtime.upsertResource(id, false);
       res.json({ success: true, message: '删除成功' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });

@@ -1,10 +1,10 @@
 ﻿import { AIRequestManager, BaseMessage } from '@ai';
-import OneBot from '@/api/common/oneBot';
-import { Command, CommandFactory } from '@/core/command';
+import { Command } from '@/core/command';
 import { BeanFactory } from '@/core/bean';
 import { createLogger } from '@utils/logger';
-import { judgeIsAtMe, makeTextMsg } from '@/utils/message';
-import { extractMessageContent, extractMessageContentAsync } from '@/api/ai/llm';
+import { judgeIsAtMe, MessageBuilder } from '@/utils/message';
+import { extractMessageContent } from '@utils/messageContent';
+import type { Session } from '@/core/session';
 import type { AIChatConfig } from '@/beans/aiChat';
 import { ToolManager } from '@/services/agentTools/type';
 import type { ChatCompletionMessageToolCall } from '@ai';
@@ -37,18 +37,17 @@ const SYSTEM_PROMPT = `
 
 
 // ========== 判断是否回复了机器人的消息 ==========
-async function isReplyToBot(session: any): Promise<boolean> {
-  const reply = session.message.find((m: any) => m.type === 'reply');
+async function isReplyToBot(session: Session): Promise<boolean> {
+  const reply: any = session.message.find((m: any) => m.type === 'reply');
   if (!reply?.data?.id) return false;
   try {
-    const resp = await OneBot.getMsg({ message_id: Number(reply.data.id) });
-    const target = resp;
-    return target && String(target.user_id) === process.env.ME;
+    const target = await session.getMsg(Number(reply.data.id));
+    return !!target && String(target.user_id) === process.env.ME;
   } catch {
     return false;
   }
 }
-async function buildMessages(session: any): Promise<BaseMessage[]> {
+async function buildMessages(session: Session): Promise<BaseMessage[]> {
   const messages: BaseMessage[] = [
     {
       role: 'system', content: [
@@ -60,28 +59,28 @@ async function buildMessages(session: any): Promise<BaseMessage[]> {
     },
   ];
   // 如果当前消息是回复，将被回复消息的内容作为上下文
-  const reply = session.message.find((m: any) => m.type === 'reply');
+  const reply: any = session.message.find((m: any) => m.type === 'reply');
   if (reply?.data?.id) {
     try {
       // getMsg 的拦截器已解包 data，返回的就是消息对象本身
-      const targetMsg = await OneBot.getMsg({ message_id: Number(reply.data.id) });
+      const targetMsg = await session.getMsg(Number(reply.data.id));
       if (targetMsg?.message) {
         messages.push({
           role: 'user',
-          content: await extractMessageContentAsync(targetMsg.message),
+          content: extractMessageContent(targetMsg.message),
         });
       }
     } catch { }
   }
   messages.push({
     role: 'user',
-    content: await extractMessageContentAsync(session.message),
+    content: extractMessageContent(session.message),
   });
 
   return messages;
 }
 // ========== Command ==========
-const aiChatCmd: Command = {
+export const aiChatCmd: Command = {
   name: 'AI聊天',
   description: '@耄耋 和他聊天，他会记住之前说过的话',
   priority: 100,
@@ -118,7 +117,7 @@ const aiChatCmd: Command = {
       if (!reply) break
 
       if (typeof reply == 'string') {
-        return { type: 'message', items: [makeTextMsg(reply)] };
+        return MessageBuilder.message().text(reply).build();
       } else if (typeof reply == 'object') {
         const { function: func } = (reply as ChatCompletionMessageToolCall)
         const { name, arguments: args } = func
@@ -144,5 +143,3 @@ const aiChatCmd: Command = {
     return
   },
 };
-
-CommandFactory.getInstance().registry(aiChatCmd);

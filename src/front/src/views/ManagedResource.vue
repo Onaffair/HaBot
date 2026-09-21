@@ -149,8 +149,25 @@
         @node-click="onTreeNodeClick"
       />
       <div class="selected-path">
-        已选择：<span>{{ dirDialogResult }}</span>
+        已选择：<span>{{ dirDialogResult || '（尚未选择，请先点击选择一个目录）' }}</span>
       </div>
+      <div v-if="dirDialogResult" class="dir-actions">
+        <el-button size="small" type="success" plain @click="triggerUpload">
+          <el-icon><Upload /></el-icon>&nbsp;上传文件
+        </el-button>
+        <el-button size="small" type="primary" plain @click="openMkdir">
+          <el-icon><FolderAdd /></el-icon>&nbsp;新建目录
+        </el-button>
+        <span class="dir-action-hint">上传/新建后 bot 会自动纳入对应资源，实时生效</span>
+      </div>
+      <input
+        ref="fileInputRef"
+        type="file"
+        multiple
+        accept=".jpg,.jpeg,.png,.gif,.webp,.mp3,.wav,.ogg,.amr"
+        style="display: none"
+        @change="onUploadChange"
+      />
       <template #footer>
         <el-button @click="dirDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmDir">确认选择</el-button>
@@ -162,7 +179,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { FolderOpened, Folder } from '@element-plus/icons-vue'
+import { FolderOpened, Folder, FolderAdd, Upload } from '@element-plus/icons-vue'
 import {
   managedResourceApi,
   resourceSettingApi,
@@ -217,6 +234,74 @@ const loadTreeNode = async (node: any, resolve: (nodes: FsNode[]) => void) => {
 
 const onTreeNodeClick = (data: FsNode) => {
   dirDialogResult.value = data.path
+}
+
+// ===== 目录树操作：上传文件 / 新建目录 =====
+const uploading = ref(false)
+const fileInputRef = ref<HTMLInputElement>()
+
+/** 触发隐藏文件选择框 */
+const triggerUpload = () => {
+  if (!dirDialogResult.value) return
+  const input = fileInputRef.value
+  if (input) {
+    input.value = ''
+    input.click()
+  }
+}
+
+/** 选中文件后上传到当前选中目录 */
+const onUploadChange = async (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const files = target.files ? Array.from(target.files) : []
+  if (!files.length || !dirDialogResult.value) return
+  uploading.value = true
+  try {
+    const res = await fileSystemApi.upload(dirDialogResult.value, files)
+    const names = (res.data?.files || []).map((p) => p.split(/[\\/]/).pop())
+    ElMessage.success(`已上传 ${names.length} 个文件到 ${dirDialogResult.value}`)
+    // 目录文件新增，可能落在某资源目录内 -> 后端已发事件，bot 会自动纳入；
+    // 此处刷新资源列表确保本地展示与 bot 一致
+    fetchData()
+  } finally {
+    uploading.value = false
+  }
+}
+
+/** 在当前选中目录下新建子目录 */
+const openMkdir = async () => {
+  if (!dirDialogResult.value) return
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `在以下目录下新建子目录：\n${dirDialogResult.value}`,
+      '新建目录',
+      {
+        confirmButtonText: '创建',
+        cancelButtonText: '取消',
+        inputPlaceholder: '输入新目录名称',
+        inputValidator: (v: string) => (v && v.trim() ? true : '目录名不能为空'),
+      }
+    )
+    const name = (value || '').trim()
+    await fileSystemApi.mkdir(dirDialogResult.value, name)
+    ElMessage.success(`目录 ${name} 创建成功`)
+    // 目录变更可能落在某资源目录内 -> bot 自动纳入；刷新目录树与资源列表保持一致
+    reloadDirTree()
+    fetchData()
+  } catch {
+    /* 用户取消 */
+  }
+}
+
+/** 重新加载目录树初始节点（懒加载根节点需先卸载再重建以触发重新请求） */
+const reloadDirTree = async () => {
+  treeData.value = []
+  const roots = await fileSystemApi.roots()
+  treeData.value = roots.data || []
+  // 若已选中默认目录，跳转到对应子树
+  if (dirDialogResult.value) {
+    treeRef.value?.setCurrentKey(dirDialogResult.value)
+  }
 }
 
 // ===== 数据加载 =====
@@ -424,4 +509,6 @@ onMounted(() => {
 .dir-tree { max-height: 40vh; overflow: auto; border: 1px solid #e6e6e6; border-radius: 4px; padding: 8px; }
 .selected-path { margin-top: 8px; font-size: 13px; color: #606266; word-break: break-all; }
 .selected-path span { color: #409EFF; }
+.dir-actions { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dir-action-hint { font-size: 12px; color: #909399; }
 </style>

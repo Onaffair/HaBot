@@ -1,19 +1,29 @@
-import { readdirSync } from 'fs'
+import { CommandFactory } from '@/core/command'
+import type { Command } from '@/core/command'
 
-const blacklist: string[] = [
-  // 文件名（不含扩展名），加入此列表的不会被自动加载
-  'menu',
+import { BGCmd } from './BG'
+import { addOneCmd } from './addOne'
+import { aiChatCmd } from './aiChat'
+import { haqiCmd } from './haqi2sb'
+import { yinjiCmd, eatCmd } from './reactions'
+import { videoDownloaderCmd } from './videoLinkDownloader'
+import { webScreenshotCmd } from './webScreenshot'
+// import { maodieCmd } from './menu' // 菜单命令：暂不启用（沿用原黑名单意图），需要时取消注释并注册
+
+/**
+ * 命令显式注册表：新增命令先在实现文件导出定义，再在此列表登记，
+ * 未列出的文件不会被加载（取代原目录自动扫描机制）。
+ */
+const commands: Command[] = [
+  BGCmd,
+  addOneCmd,
+  aiChatCmd,
+  haqiCmd,
+  yinjiCmd,
+  eatCmd,
+  videoDownloaderCmd,
+  webScreenshotCmd,
 ]
 
-void (async () => {
-  const files = readdirSync(__dirname)
-  const ext = files.some(f => f.endsWith('.ts')) ? '.ts' : '.js'
-
-  await Promise.all(
-    files
-      .filter(f => f.endsWith(ext))
-      .map(f => f.slice(0, -ext.length))
-      .filter(name => name !== 'index' && !blacklist.includes(name))
-      .map(name => import(`./${name}`)),
-  )
-})()
+const fac = CommandFactory.getInstance()
+commands.forEach(cmd => fac.registry(cmd))

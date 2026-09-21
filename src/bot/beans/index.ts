@@ -1,20 +1,21 @@
-import { readdirSync } from 'fs'
+import { BeanFactory } from '@/core/bean'
+import type { Bean } from '@/core/bean'
 
-const blacklist: string[] = [
-  // 文件名（不含扩展名），加入此列表的不会被自动加载
+import { aiChatBean } from './aiChat'
+import { groupBean } from './group'
+import { meBean } from './me'
+import { resourceBean } from './resource'
+
+/**
+ * Bean 显式注册表：新增配置项先在实现文件导出 Bean 定义，再在此列表登记。
+ * 注册后由入口统一执行 initAllBean() 完成按库初始化（取代原目录自动扫描机制）。
+ */
+const beans: Bean[] = [
+  meBean,
+  aiChatBean,
+  resourceBean,
+  groupBean,
 ]
 
-void (async () => {
-  const files = readdirSync(__dirname)
-  const ext = files.some(f => f.endsWith('.ts')) ? '.ts' : '.js'
-
-  await Promise.all(
-    files
-      .filter(f => f.endsWith(ext))
-      .map(f => f.slice(0, -ext.length))
-      .filter(name => name !== 'index' && !blacklist.includes(name))
-      .map(name => import(`./${name}`)),
-  )
-})()
-
-
+const factory = BeanFactory.getInstance()
+beans.forEach(bean => factory.registry(bean))

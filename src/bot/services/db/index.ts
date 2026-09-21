@@ -1,6 +1,4 @@
 ﻿export { groupListenService, default as GroupListenService } from './groupListen'
-export { chatMemoryService, default as ChatMemoryService } from './chatMemory'
-export { memorySummaryService, default as MemorySummaryService } from './memorySummary'
 export { userBlacklistService, default as UserBlacklistService } from './userBlacklist'
 export { managedResourceService, default as ManagedResourceService } from './managedResource'
 export { resourceSettingService, default as ResourceSettingService } from './resourceSetting'

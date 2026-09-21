@@ -28,14 +28,6 @@
           <el-icon><SetUp /></el-icon>
           <span>触发规则</span>
         </el-menu-item>
-        <el-menu-item index="/chat-memories">
-          <el-icon><ChatDotSquare /></el-icon>
-          <span>对话记忆</span>
-        </el-menu-item>
-        <el-menu-item index="/memory-summaries">
-          <el-icon><Document /></el-icon>
-          <span>对话摘要</span>
-        </el-menu-item>
         <el-menu-item index="/user-blacklist">
           <el-icon><CircleCloseFilled /></el-icon>
           <span>用户黑名单</span>
@@ -59,8 +51,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  HomeFilled, Headset, FolderAdd, SetUp,
-  ChatDotSquare, Document, CircleCloseFilled
+  HomeFilled, Headset, FolderAdd, SetUp, CircleCloseFilled
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

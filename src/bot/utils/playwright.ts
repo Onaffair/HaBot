@@ -1,26 +1,22 @@
-﻿import { Browser, Page, BrowserContext } from "playwright";
-import { existsSync } from "fs";
+﻿import { Page, BrowserContext } from "playwright";
+import { mkdirSync } from "fs";
+import { resolve } from "path";
 
-/** 探测本机已安装的 Chrome 可执行文件路径,未找到则返回 undefined(由 Playwright 自行处理) */
-function resolveChromeExecutablePath(): string | undefined {
-  const candidates = [
-    process.env.PROGRAMFILES &&
-      `${process.env.PROGRAMFILES}/Google/Chrome/Application/chrome.exe`,
-    process.env["PROGRAMFILES(X86)"] &&
-      `${process.env["PROGRAMFILES(X86)"]}/Google/Chrome/Application/chrome.exe`,
-    process.env.LOCALAPPDATA &&
-      `${process.env.LOCALAPPDATA}/Google/Chrome/Application/chrome.exe`,
-    // 兜底常用固定路径
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-  ].filter(Boolean) as string[];
-
-  return candidates.find((p) => existsSync(p));
+/**
+ * 解析浏览器 profile 持久化目录（src/config/playwright），
+ * 兼容 ts-node 源码运行（src/bot/utils）与编译后运行（dist/bot/utils）两种场景。
+ * profile 会在多次启动间复用，保留登录态、Cookie、localStorage 等数据。
+ */
+function resolveProfileDir(): string {
+  const inDist = __dirname.replace(/\\/g, "/").includes("/dist/");
+  return inDist
+    ? resolve(__dirname, "..", "..", "..", "src", "config", "playwright")
+    : resolve(__dirname, "..", "..", "config", "playwright");
 }
 
 export class PlaywrightManager {
   private static instance: PlaywrightManager | null = null;
-  private browser: Browser | null = null;
+  private context: BrowserContext | null = null;
 
   private constructor() { }
 
@@ -35,26 +31,34 @@ export class PlaywrightManager {
   }
 
   /**
-   * 获取浏览器实例（懒加载），首次调用时自动启动 Chromium
+   * 获取持久化浏览器上下文（懒加载），首次调用时自动启动 Chromium（Playwright 内置浏览器）
+   * @remarks 使用 launchPersistentContext 将 profile 持久化到 src/config/playwright，
+   *   后续启动自动复用该 profile，保留登录态、Cookie 等会话数据。
+   *   注意：同一 profile 同一时刻只能被一个浏览器实例使用。
    */
-  async getBrowser(): Promise<Browser> {
-    if (!this.browser || !this.browser.isConnected()) {
+  async getContext(): Promise<BrowserContext> {
+    if (!this.context) {
       const { chromium } = await import("playwright");
-      const executablePath = resolveChromeExecutablePath();
-      this.browser = await chromium.launch({
-        ...(executablePath ? { executablePath } : {}),
+      const userDataDir = resolveProfileDir();
+      mkdirSync(userDataDir, { recursive: true });
+      this.context = await chromium.launchPersistentContext(userDataDir, {
         headless: true,
       });
+      // 上下文被外部关闭时清空引用，便于下次懒加载重启
+      this.context.on("close", () => {
+        this.context = null;
+      });
     }
-    return this.browser;
+    return this.context;
   }
 
   /**
-   * 创建新页面（带全新上下文），每次调用返回独立页面
+   * 在持久化上下文中创建新页面
+   * @remarks 所有页面共享同一 profile（Cookie/localStorage 互通），
+   *   与此前每页独立上下文的隔离行为不同。
    */
   async createPage(): Promise<Page> {
-    const browser = await this.getBrowser();
-    const context: BrowserContext = await browser.newContext();
+    const context = await this.getContext();
     return context.newPage();
   }
 
@@ -211,9 +215,9 @@ export class PlaywrightManager {
       return buffer;
     } finally {
       // 关闭页面及其所属上下文，避免资源泄漏
-      const context = page.context();
-      await page.close().catch(() => { });
-      await context.close().catch(() => { });
+      // const context = page.context();
+      // await page.close().catch(() => { });
+      // await context.close().catch(() => { });
     }
   }
 
@@ -318,12 +322,12 @@ export class PlaywrightManager {
   }
 
   /**
-   * 关闭浏览器并释放资源
+   * 关闭浏览器上下文并释放资源（profile 数据保留在磁盘，下次启动继续复用）
    */
   async closeBrowser(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
+    if (this.context) {
+      await this.context.close();
+      this.context = null;
     }
   }
 }

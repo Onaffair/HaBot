@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { commandRuleService } from '../../bot/services/db';
+import { runtime } from '../../bot/core/runtime';
 
 export function createCommandRuleRoutes(app: Express) {
   const prefix = '/api/command-rules';
@@ -44,6 +45,7 @@ export function createCommandRuleRoutes(app: Express) {
         fileFilter,
         priority,
       });
+      if (record) void runtime.upsertRule(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -64,6 +66,7 @@ export function createCommandRuleRoutes(app: Express) {
         fileFilter,
         priority,
       });
+      if (record) void runtime.upsertRule(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -75,6 +78,7 @@ export function createCommandRuleRoutes(app: Express) {
     try {
       const enabled = !!req.body.enabled;
       const record = await commandRuleService.update(parseInt(req.params.id as string), { enabled });
+      if (record) void runtime.upsertRule(record.id, record.enabled !== false);
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -84,7 +88,9 @@ export function createCommandRuleRoutes(app: Express) {
   // 删除触发规则
   app.delete(`${prefix}/:id`, async (req: Request, res: Response) => {
     try {
-      await commandRuleService.delete(parseInt(req.params.id as string));
+      const id = parseInt(req.params.id as string);
+      await commandRuleService.delete(id);
+      void runtime.upsertRule(id, false);
       res.json({ success: true, message: '删除成功' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });

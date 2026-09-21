@@ -1,7 +1,5 @@
 import { Express } from 'express';
 import { createGroupListenRoutes } from './groupListen';
-import { createChatMemoryRoutes } from './chatMemory';
-import { createMemorySummaryRoutes } from './memorySummary';
 import { createUserBlacklistRoutes } from './userBlacklist';
 import { createManagedResourceRoutes } from './managedResource';
 import { createFileSystemRoutes } from './fileSystem';
@@ -13,8 +11,6 @@ export function registerRoutes(app: Express) {
   });
 
   createGroupListenRoutes(app);
-  createChatMemoryRoutes(app);
-  createMemorySummaryRoutes(app);
   createUserBlacklistRoutes(app);
   createManagedResourceRoutes(app);
   createFileSystemRoutes(app);

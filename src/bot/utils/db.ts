@@ -50,16 +50,6 @@ class DatabaseService {
     return this.prisma?.groupListen
   }
 
-  /** Typed delegate: chat_memories 表操作 */
-  get chatMemory() {
-    return this.prisma?.chatMemory
-  }
-
-  /** Typed delegate: memory_summaries 表操作 */
-  get memorySummary() {
-    return this.prisma?.memorySummary
-  }
-
   /** Typed delegate: user_blacklist 表操作 */
   get userBlacklist() {
     return this.prisma?.userBlacklist

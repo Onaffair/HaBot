@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../../bot/utils/db';
+import { runtime } from '../../bot/core/runtime';
 
 export function createGroupListenRoutes(app: Express) {
   const prefix = '/api/group-listens';
@@ -40,6 +41,7 @@ export function createGroupListenRoutes(app: Express) {
       const record = await db.groupListen?.create({
         data: { groupId, enabled: enabled ?? true }
       });
+      void runtime.refreshGroups();
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -54,6 +56,7 @@ export function createGroupListenRoutes(app: Express) {
         where: { groupId: req.params.groupId as string },
         data: { enabled }
       });
+      void runtime.refreshGroups();
       res.json({ success: true, data: record });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -64,6 +67,7 @@ export function createGroupListenRoutes(app: Express) {
   app.delete(`${prefix}/:groupId`, async (req: Request, res: Response) => {
     try {
       await db.groupListen?.delete({ where: { groupId: req.params.groupId as string } });
+      void runtime.refreshGroups();
       res.json({ success: true, message: '删除成功' });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });

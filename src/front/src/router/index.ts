@@ -34,18 +34,6 @@ const router = createRouter({
           meta: { title: '触发规则' }
         },
         {
-          path: 'chat-memories',
-          name: 'ChatMemory',
-          component: () => import('../views/ChatMemory.vue'),
-          meta: { title: '对话记忆' }
-        },
-        {
-          path: 'memory-summaries',
-          name: 'MemorySummary',
-          component: () => import('../views/MemorySummary.vue'),
-          meta: { title: '对话摘要' }
-        },
-        {
           path: 'user-blacklist',
           name: 'UserBlacklist',
           component: () => import('../views/UserBlacklist.vue'),

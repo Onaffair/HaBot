@@ -1,5 +1,5 @@
 import { BeanFactory } from '@/core/bean';
-import { Schedule, ScheduleFactory } from "@/core/schedule";
+import { Schedule } from "@/core/schedule";
 import OneBot from '@/api/common/oneBot';
 import { createLogger } from '@utils/logger';
 import type { GroupConfig } from '@/beans/group';
@@ -8,7 +8,7 @@ import { OB11GroupMember } from '@/interface/onebot';
 const factory = BeanFactory.getInstance()
 const logger = createLogger('SyncGroupMembers');
 
-const syncGroupMembersSchedule: Schedule = {
+export const syncGroupMembersSchedule: Schedule = {
   name: '群成员同步',
   description: '定时同步监听群组的成员列表',
   delay: 24 * 60 * 60 * 1000, // 1 D
@@ -35,8 +35,3 @@ const syncGroupMembersSchedule: Schedule = {
     logger.info(`Synced members for ${group.listen.length} groups`);
   },
 };
-
-const fac = ScheduleFactory.getInstance();
-fac.registry(syncGroupMembersSchedule);
-
-export default syncGroupMembersSchedule;

@@ -24,24 +24,6 @@ export interface GroupListen {
   enabled: boolean
 }
 
-export interface ChatMemory {
-  id: number
-  groupId: string
-  userId: string
-  role: string
-  content: string
-  raw?: string
-  createdAt: string
-}
-
-export interface MemorySummary {
-  id: number
-  groupId: string
-  summary: string
-  sinceId: number
-  createdAt: string
-}
-
 export interface UserBlacklist {
   id: number
   qq: string
@@ -109,34 +91,6 @@ export const groupListenApi = {
     api.delete<any, ApiResponse<null>>(`/group-listens/${groupId}`)
 }
 
-// ==================== 对话记忆 API ====================
-
-export const chatMemoryApi = {
-  list: (params?: { page?: number; pageSize?: number; groupId?: string; userId?: string }) =>
-    api.get<any, ApiResponse<PaginatedResult<ChatMemory>>>('/chat-memories', { params }),
-  get: (id: number) => api.get<any, ApiResponse<ChatMemory>>(`/chat-memories/${id}`),
-  create: (data: { groupId: string; userId: string; role: string; content: string; raw?: string }) =>
-    api.post<any, ApiResponse<ChatMemory>>('/chat-memories', data),
-  delete: (id: number) =>
-    api.delete<any, ApiResponse<null>>(`/chat-memories/${id}`),
-  clearAll: (groupId?: string) =>
-    api.delete<any, ApiResponse<null>>('/chat-memories', { params: { groupId } })
-}
-
-// ==================== 对话摘要 API ====================
-
-export const memorySummaryApi = {
-  list: (params?: { page?: number; pageSize?: number; groupId?: string }) =>
-    api.get<any, ApiResponse<PaginatedResult<MemorySummary>>>('/memory-summaries', { params }),
-  get: (id: number) => api.get<any, ApiResponse<MemorySummary>>(`/memory-summaries/${id}`),
-  create: (data: { groupId: string; summary: string; sinceId: number }) =>
-    api.post<any, ApiResponse<MemorySummary>>('/memory-summaries', data),
-  delete: (id: number) =>
-    api.delete<any, ApiResponse<null>>(`/memory-summaries/${id}`),
-  clearAll: (groupId?: string) =>
-    api.delete<any, ApiResponse<null>>('/memory-summaries', { params: { groupId } })
-}
-
 // ==================== 用户黑名单 API ====================
 
 export const userBlacklistApi = {
@@ -195,7 +149,19 @@ export const fileSystemApi = {
   roots: () => api.get<any, ApiResponse<FsNode[]>>('/filesystem/roots'),
   /** 默认管理目录节点 */
   defaultTree: (path: string) =>
-    api.get<any, ApiResponse<FsNode | null>>('/filesystem/default-tree', { params: { path } })
+    api.get<any, ApiResponse<FsNode | null>>('/filesystem/default-tree', { params: { path } }),
+  /** 在父目录下新建子目录 */
+  mkdir: (path: string, name: string) =>
+    api.post<any, ApiResponse<{ path: string }>>('/filesystem/mkdir', { path, name }),
+  /** 上传资源文件到指定目录（多文件） */
+  upload: (dirPath: string, files: File[]) => {
+    const formData = new FormData()
+    files.forEach((f) => formData.append('files', f))
+    return api.post<any, ApiResponse<{ files: string[] }>>('/filesystem/upload', formData, {
+      params: { dirPath },
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
 }
 
 // ==================== 触发规则 API ====================

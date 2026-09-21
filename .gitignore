@@ -10,3 +10,4 @@ src/resources/*
 .deepseek/*
 scripts/*
 src/output/*
+src/config/*

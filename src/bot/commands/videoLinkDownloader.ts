@@ -1,14 +1,14 @@
 
 import { VideoSpider } from "@/services/spider";
-import { Command, CommandFactory } from "@/core/command";
+import { Command } from "@/core/command";
 import { createLogger } from "@/utils/logger";
-import { makeTextMsg, makeVideoMsg } from "@/utils/message";
+import { MessageBuilder } from "@/utils/message";
 
 const logger = createLogger('videoDownloader')
 
 const videoSpider = VideoSpider.getInstance()
 
-const videoDownloaderCmd: Command = {
+export const videoDownloaderCmd: Command = {
   name: '视频分享下载',
   description: '下载转发过来的视频链接',
   match: (session) => {
@@ -17,10 +17,9 @@ const videoDownloaderCmd: Command = {
   handle: async (session) => {
     const { title, path } = await videoSpider.handle(session)
     logger.info(`${title} has download in ${path}`)
-    return { type: 'message', items: [makeVideoMsg(path), makeTextMsg(title)] }
+    return MessageBuilder.message().video(path).text(title).build()
   },
 }
-CommandFactory.getInstance().registry(videoDownloaderCmd)
 
 
 

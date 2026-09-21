@@ -16,32 +16,7 @@ model GroupListen {
   @@map("group_listens")
 }
 
-// ========== 对话记忆 ==========
-model ChatMemory {
-  id        Int      @id @default(autoincrement())
-  groupId   String   @map("group_id")
-  userId    String   @map("user_id")
-  role      String   // 'user' | 'assistant'
-  content   String
-  raw       String?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([groupId, createdAt])
-  @@index([groupId, userId])
-  @@map("chat_memories")
-}
-
-// ========== 对话摘要 ==========
-model MemorySummary {
-  id        Int      @id @default(autoincrement())
-  groupId   String   @map("group_id")
-  summary   String
-  sinceId   Int      @map("since_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([groupId])
-  @@map("memory_summaries")
-}
+// ========== 对话记忆 / 对话摘要 已移除：聊天记录不做保留 ==========
 
 // ========== 用户黑名单 ==========
 model UserBlacklist {

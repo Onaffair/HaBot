@@ -1,8 +1,7 @@
-import { Command, CommandFactory } from "@/core/command";
+import { Command } from "@/core/command";
 import { createLogger } from "@/utils/logger";
-import { makeTextMsg } from "@/utils/message";
+import { MessageBuilder } from "@/utils/message";
 import { PlaywrightManager } from "@/utils/playwright";
-import { MessageItem } from "@/interface/onebot";
 import { isBlockedUrl } from "@/utils/webShotBlacklist";
 
 const logger = createLogger('webScreenshot')
@@ -14,7 +13,7 @@ const logger = createLogger('webScreenshot')
  */
 const URL_PATTERN = /https?:\/\/[^\s<>"'（）【】《》，。！？；：、]+/i;
 
-const webScreenshotCmd: Command = {
+export const webScreenshotCmd: Command = {
   name: '网页截图',
   description: '消息中包含网页链接时，自动截取网页并回复图片',
   priority: 0,
@@ -27,10 +26,9 @@ const webScreenshotCmd: Command = {
     const block = isBlockedUrl(url)
     if (block.blocked) {
       logger.info(`blocked url, domain in blacklist: ${url} (rule: ${block.matched})`)
-      return {
-        type: 'message',
-        items: [makeTextMsg(`该域名（${block.matched}）已被屏蔽，不予截图。`)]
-      }
+      return MessageBuilder.message()
+        .text(`该域名（${block.matched}）已被屏蔽，不予截图。`)
+        .build()
     }
 
     logger.info(`start screenshot: ${url}`)
@@ -39,19 +37,13 @@ const webScreenshotCmd: Command = {
       const buffer = await pm.screenshot(url)
       logger.info(`screenshot done: ${url} (${buffer.length} bytes)`)
 
-      const imageItem: MessageItem = {
-        type: 'image',
-        data: { file: `base64://${buffer.toString('base64')}` }
-      }
-      return { type: 'message', items: [imageItem] }
+      const imageItem = { type: 'image', data: { file: `base64://${buffer.toString('base64')}` } } as const
+      return MessageBuilder.message().append(imageItem as any).build()
     } catch (e: any) {
       logger.error(`screenshot failed: ${url}`, e)
-      return {
-        type: 'message',
-        items: [makeTextMsg(`网页截图失败：${e?.message || '未知错误'}`)]
-      }
+      return MessageBuilder.message()
+        .text(`网页截图失败：${e?.message || '未知错误'}`)
+        .build()
     }
   },
 }
-
-CommandFactory.getInstance().registry(webScreenshotCmd)

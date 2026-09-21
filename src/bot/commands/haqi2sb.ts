@@ -1,14 +1,14 @@
 
 import { BeanFactory } from '@/core/bean';
-import { Command, CommandFactory } from "@/core/command";
-import { MessageItem, OB11MessageAt } from "@/interface/onebot";
-import { makeRandomResource } from "@/utils/message";
+import { Command } from "@/core/command";
+import { OB11MessageAt } from "@/interface/onebot";
+import { MessageBuilder } from "@/utils/message";
 import { createLogger } from '@utils/logger'
 import type { GroupConfig } from '@/beans/group';
 
 const factory = BeanFactory.getInstance()
 const logger = createLogger('HaQiToSB')
-const haqiCmd: Command = {
+export const haqiCmd: Command = {
   name: '对某人哈气',
   match: (session) => {
     const reg = /[对|向].*哈气/
@@ -33,10 +33,12 @@ const haqiCmd: Command = {
       return item
     }).filter(item => item.data.qq)
     if (!atItems.length) return
-    return { type: 'message', items: [...atItems, makeRandomResource('cat')] }
+    // 链式拼接：逐个 @ 成员 -> 随机 cat 资源
+    return MessageBuilder.message()
+      .appendAll(atItems)
+      .resource('cat')
+      .build()
   },
   description: '对某人哈气',
   priority: 10
 }
-const fac = CommandFactory.getInstance()
-fac.registry(haqiCmd)

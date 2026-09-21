@@ -1,4 +1,4 @@
-import { Command, CommandFactory } from "@/core/command";
+import { Command } from "@/core/command";
 import { ActionResult } from "@/interface/actoin";
 import { Session } from "@/core/session";
 import { createLogger } from "@/utils/logger";
@@ -25,9 +25,16 @@ class AddOneCmd implements Command {
     const messageHash = groupId.toString().concat(`-${JSON.stringify(message)}`)
     const isExist = redis.get(messageHash)
     if (isExist) return false
-    groupMessageList.value?.push(message)
-    const count = (groupMessageList.value as Array<any>).filter(t => JSON.stringify(t) == JSON.stringify(message))?.length
-    return count > 1
+    const list = (groupMessageList.value ?? []) as Array<any>
+    // 额外判断：倒数第二条（即当前消息的上一条）须与当前消息一致才返回 true
+    const prevMessage = list[list.length - 1]
+    const isConsecutive =
+      !!prevMessage && JSON.stringify(prevMessage) === JSON.stringify(message)
+
+    list.push(message)
+
+    // 需与上一条消息一致（连续消息）才触发
+    return isConsecutive
   }
   handle(session) {
     const groupId = session.groupId.toString()
@@ -41,7 +48,8 @@ class AddOneCmd implements Command {
     } as ActionResult
   }
 }
-CommandFactory.getInstance().registry(new AddOneCmd())
+/** 导出的命令实例，由 commands/index.ts 显式注册 */
+export const addOneCmd = new AddOneCmd()
 
 
 
