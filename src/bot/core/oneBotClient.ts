@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import { createLogger } from '@utils/logger'
+import { configService } from '@/services/db/systemConfig'
 import type { OneBotMessageReceive } from '@/interface/onebot'
 
 /**
@@ -204,13 +205,13 @@ export class OneBotClient extends EventEmitter {
 }
 
 /**
- * 从环境变量构造默认的 OneBotClient。
- * 集中在此读取 env，避免 SDK 内部耦合具体配置源。
+ * 从 ConfigService 读取 WS 配置构造 OneBotClient。
+ * 集中在此读取，避免 SDK 内部耦合具体配置源。
  */
 export function createOneBotClientFromEnv(): OneBotClient {
   return new OneBotClient({
-    url: process.env.WS_URL || '',
-    token: process.env.WS_TOKEN,
+    url: configService.get('WS_URL', ''),
+    token: configService.get('WS_TOKEN') || undefined,
   })
 }
 

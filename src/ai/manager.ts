@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { AIPlatform, AIRequestOptions, BaseMessage } from "./types";
+import { buildAIProxyConfig } from "./proxy";
 
 class PlatformRegistry {
   private map: Map<string, AIPlatform>;
@@ -60,6 +61,8 @@ export class AIRequestManager {
     const res = await this.axios.post(p.url, requestBody, {
       headers,
       ...p.axiosConfig,
+      // 全局 AI 代理统一注入，位于调用方覆盖项之前，允许单次调用按需覆盖
+      ...buildAIProxyConfig(),
       ...axiosConfig,
     })
 

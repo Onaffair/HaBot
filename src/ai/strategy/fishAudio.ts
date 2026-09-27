@@ -1,24 +1,21 @@
 import { AIPlatform, AIRequestOptions } from "../types";
 import { AIRequestManager } from "../manager";
+import { configService } from '@/services/db/systemConfig';
 
 class FishAudio implements AIPlatform {
   name = 'ChatTTS'
-  url = process.env.FISHAUDIO_BASE_URL || 'https://api.fish.audio/v1/tts'
-  secret = process.env.FISHAUDIO_API_KEY || ''
   model = 's2-pro'
+  /** 取值改为访问器：每次请求实时读配置，DB 改动即刻生效 */
+  get url() {
+    return configService.get('FISHAUDIO_BASE_URL', 'https://api.fish.audio/v1/tts')
+  }
+  get secret() {
+    return configService.get('FISHAUDIO_API_KEY', '')
+  }
 
-  // 平台内置默认 axios 配置：二进制音频响应，可选代理
+  // 平台内置默认 axios 配置：二进制音频响应（代理由 manager 统一注入全局 AI 代理）
   axiosConfig = {
     responseType: 'arraybuffer' as const,
-    ...(process.env.FISHAUDIO_PROXY_HOST
-      ? {
-        proxy: {
-          protocol: 'http',
-          host: process.env.FISHAUDIO_PROXY_HOST,
-          port: Number(process.env.FISHAUDIO_PROXY_PORT) || 7897,
-        },
-      }
-      : {}),
   }
 
   // 守岸人

@@ -1,5 +1,6 @@
 import { AIPlatform, AIRequestOptions, BaseMessage } from "../types";
 import { AIRequestManager } from "../manager";
+import { configService } from '@/services/db/systemConfig';
 
 export type ChatCompletionChoicesData = {
   message?: {
@@ -93,8 +94,13 @@ class OpenAIPlatform implements AIPlatform {
   name = 'openai'
   model = 'Pro/moonshotai/Kimi-K2.6'
   // model = 'deepseek-ai/DeepSeek-V4-Flash' 
-  url = process.env.OPENAI_BASE_URL || 'https://api.siliconflow.cn/v1/chat/completions'
-  secret = process.env.OPENAI_API_KEY || ''
+  /** 取值改为访问器：每次请求实时读配置，DB 改动即刻生效 */
+  get url() {
+    return configService.get('OPENAI_BASE_URL', 'https://api.siliconflow.cn/v1/chat/completions')
+  }
+  get secret() {
+    return configService.get('OPENAI_API_KEY', '')
+  }
 
   // 类成员变量作为默认值
   private stream = false

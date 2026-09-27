@@ -3,6 +3,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { createLogger } from '../bot/utils/logger';
 import DatabaseService from '../bot/utils/db';
+import { configService } from '../bot/services/db';
 import { registerRoutes } from './routes';
 
 const logger = createLogger('Backend');
@@ -61,9 +62,12 @@ function printRoutes() {
  */
 export function startBackendOnly(): void {
   DatabaseService.getInstance();
-  const app = buildBackendApp();
-  app.listen(BACKEND_PORT, () => {
-    printRoutes();
+  // 系统配置仍由本进程读写（/api/system-configs），先加载缓存再开服务
+  void configService.init().then(() => {
+    const app = buildBackendApp();
+    app.listen(BACKEND_PORT, () => {
+      printRoutes();
+    });
   });
 }
 

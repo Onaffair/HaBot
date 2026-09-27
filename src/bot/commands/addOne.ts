@@ -3,6 +3,7 @@ import { ActionResult } from "@/interface/actoin";
 import { Session } from "@/core/session";
 import { createLogger } from "@/utils/logger";
 import { Redis } from "@/utils/redis";
+import { getPreviousGroupMessage } from "@/utils/groupMessageTrace";
 
 
 
@@ -17,24 +18,15 @@ class AddOneCmd implements Command {
     if (session.messageType != 'group') return false
     const groupId = session.groupId.toString()
     const message = session.message
-    let groupMessageList = redis.get(groupId)
-    if (!groupMessageList) {
-      redis.set(groupId, [], 24 * 60 * 60 * 1000)
-      groupMessageList = redis.get(groupId)
-    }
+
+    // 去重：同一群内相同内容触发过一次后，一段时间内不再重复 +1（防止机器人自身回声连环触发）
     const messageHash = groupId.toString().concat(`-${JSON.stringify(message)}`)
-    const isExist = redis.get(messageHash)
-    if (isExist) return false
-    const list = (groupMessageList.value ?? []) as Array<any>
-    // 额外判断：倒数第二条（即当前消息的上一条）须与当前消息一致才返回 true
-    const prevMessage = list[list.length - 1]
-    const isConsecutive =
-      !!prevMessage && JSON.stringify(prevMessage) === JSON.stringify(message)
+    if (redis.get(messageHash)) return false
 
-    list.push(message)
-
-    // 需与上一条消息一致（连续消息）才触发
-    return isConsecutive
+    // 连续判定：与「上一条群消息」完全一致才触发。
+    // 上一条消息由 groupMessageTrace 过滤器统一记录，不受本命令是否被高优先级命令提前命中影响
+    const prevMessage = getPreviousGroupMessage(groupId)
+    return !!prevMessage && prevMessage === JSON.stringify(message)
   }
   handle(session) {
     const groupId = session.groupId.toString()

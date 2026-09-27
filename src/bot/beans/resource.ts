@@ -1,5 +1,6 @@
 ﻿import { Bean, BeanFactory } from "@/core/bean";
 import { runtime } from "@/core/runtime";
+import { configService } from '@/services/db/systemConfig';
 
 export interface ResourceConfig {
   path?: string;
@@ -15,7 +16,7 @@ export interface ResourceConfig {
 export const resourceBean: Bean<ResourceConfig> = {
   name: 'resource',
   value: {
-    path: process.env.RESOURCE_PATH || '@/src/resource',
+    path: configService.get('RESOURCE_PATH', 'src/resources'),
     folder: [],
   },
   init: async () => {
@@ -28,7 +29,7 @@ export const resourceBean: Bean<ResourceConfig> = {
     if (current) {
       fac.setBeanValue('resource', {
         ...current,
-        path: process.env.RESOURCE_PATH,
+        path: configService.get('RESOURCE_PATH', 'src/resources'),
       })
     }
   }

@@ -4,6 +4,7 @@ import type { Command } from '@/core/command'
 import { BGCmd } from './BG'
 import { addOneCmd } from './addOne'
 import { aiChatCmd } from './aiChat'
+import { canvasFlowCmd } from './canvasFlow'
 import { haqiCmd } from './haqi2sb'
 import { yinjiCmd, eatCmd } from './reactions'
 import { videoDownloaderCmd } from './videoLinkDownloader'
@@ -18,6 +19,7 @@ const commands: Command[] = [
   BGCmd,
   addOneCmd,
   aiChatCmd,
+  canvasFlowCmd,
   haqiCmd,
   yinjiCmd,
   eatCmd,

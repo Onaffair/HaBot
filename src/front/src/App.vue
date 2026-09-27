@@ -2,17 +2,15 @@
   <router-view />
 </template>
 
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', Arial, sans-serif;
-}
+<script setup lang="ts"></script>
+
+<style lang="less">
+/* 全局样式统一由 src/styles/tailwind.css 提供，此处仅保留 SFC 挂载点 */
+@import '@/styles/variables.less';
+
 #app {
-  height: 100vh;
+  height: 100%;
+  /* 演示 Less 变量已可用：左侧一条品牌主色描边 */
+  border-left: 2px solid transparent;
 }
 </style>

@@ -69,6 +69,16 @@ class DatabaseService {
   get commandRule() {
     return this.prisma?.commandRule
   }
+
+  /** Typed delegate: canvases 表操作 */
+  get canvas() {
+    return this.prisma?.canvas
+  }
+
+  /** Typed delegate: system_configs 表操作 */
+  get systemConfig() {
+    return this.prisma?.systemConfig
+  }
 }
 export default DatabaseService;
 export const db = DatabaseService.getInstance()

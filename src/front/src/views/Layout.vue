@@ -1,84 +1,85 @@
 <template>
-  <el-container style="height: 100vh">
+  <a-layout class="min-h-screen">
     <!-- 侧边栏 -->
-    <el-aside width="220px" style="background-color: #304156">
-      <div class="logo">
-        <h2>HaBot 管理后台</h2>
+    <a-layout-sider :width="220" theme="dark" class="!bg-[#001529]">
+      <div class="flex h-[60px] items-center justify-center border-b border-white/10 text-white">
+        <h2 class="text-base font-semibold">HaBot 管理后台</h2>
       </div>
-      <el-menu
-        :default-active="activeMenu"
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-        router
+      <a-menu
+        v-model:selectedKeys="selectedKeys"
+        theme="dark"
+        mode="inline"
+        @click="onMenuClick"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><HomeFilled /></el-icon>
+        <a-menu-item key="/dashboard">
+          <template #icon><HomeOutlined /></template>
           <span>控制台</span>
-        </el-menu-item>
-        <el-menu-item index="/group-listens">
-          <el-icon><Headset /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/group-listens">
+          <template #icon><TeamOutlined /></template>
           <span>监听群组</span>
-        </el-menu-item>
-        <el-menu-item index="/managed-resources">
-          <el-icon><FolderAdd /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/managed-resources">
+          <template #icon><FolderOpenOutlined /></template>
           <span>目录管理</span>
-        </el-menu-item>
-        <el-menu-item index="/command-rules">
-          <el-icon><SetUp /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/command-rules">
+          <template #icon><ControlOutlined /></template>
           <span>触发规则</span>
-        </el-menu-item>
-        <el-menu-item index="/user-blacklist">
-          <el-icon><CircleCloseFilled /></el-icon>
+        </a-menu-item>
+        <a-menu-item key="/user-blacklist">
+          <template #icon><UserDeleteOutlined /></template>
           <span>用户黑名单</span>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
+        </a-menu-item>
+        <a-menu-item key="/canvas">
+          <template #icon><PartitionOutlined /></template> 
+          <span>流程画布</span>
+        </a-menu-item>
+        <a-menu-item key="/system-configs">
+          <template #icon><SettingOutlined /></template>
+          <span>系统配置</span>
+        </a-menu-item>
+      </a-menu>
+    </a-layout-sider>
 
     <!-- 主内容区 -->
-    <el-container>
-      <el-header style="border-bottom: 1px solid #e6e6e6; display: flex; align-items: center">
-        <h3>{{ currentTitle }}</h3>
-      </el-header>
-      <el-main style="background: #f0f2f5">
+    <a-layout>
+      <a-layout-header class="!h-[60px] !bg-white !px-6 !leading-[60px] shadow-sm">
+        <h3 class="m-0 text-base font-medium">{{ currentTitle }}</h3>
+      </a-layout-header>
+      <a-layout-content class="bg-[#f5f5f5] p-4 overflow-auto">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </a-layout-content>
+    </a-layout>
+  </a-layout>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  HomeFilled, Headset, FolderAdd, SetUp, CircleCloseFilled
-} from '@element-plus/icons-vue'
+  HomeOutlined,
+  TeamOutlined,
+  FolderOpenOutlined,
+  ControlOutlined,
+  UserDeleteOutlined,
+  PartitionOutlined,
+  SettingOutlined,
+} from '@ant-design/icons-vue'
 
 const route = useRoute()
-const activeMenu = computed(() => route.path)
-const currentTitle = computed(() => route.meta?.title as string || '控制台')
-</script>
+const router = useRouter()
 
-<style scoped>
-.logo {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+const selectedKeys = ref<string[]>([route.path])
+const currentTitle = computed(() => (route.meta?.title as string) || '控制台')
+
+// 路由变化时同步菜单高亮（浏览器前进/后退等）
+watch(
+  () => route.path,
+  (p) => (selectedKeys.value = [p]),
+)
+
+const onMenuClick = ({ key }: { key: string }) => {
+  if (key !== route.path) router.push(key)
 }
-.logo h2 {
-  font-size: 16px;
-  font-weight: 600;
-}
-.el-aside {
-  overflow: hidden;
-}
-.el-menu {
-  border-right: none;
-}
-.el-main {
-  overflow-y: auto;
-}
-</style>
+</script>

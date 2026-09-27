@@ -4,9 +4,11 @@ import { CommandFactory, DynamicCommandExt } from './command';
 import { BeanFactory } from './bean';
 import { MessageBuilder } from '@/utils/message';
 import { createLogger } from '@/utils/logger';
-import { managedResourceService, commandRuleService, groupListenService } from '@/services/db';
+import { configService } from '@/services/db/systemConfig';
+import { managedResourceService, commandRuleService, groupListenService, canvasService } from '@/services/db';
 import type { ManagedResource } from '@/services/db/managedResource';
 import type { CommandRule } from '@/services/db/commandRule';
+import type { Canvas } from '@/services/db/canvas';
 import type { ResourceConfig } from '@/beans/resource';
 import type { GroupConfig } from '@/beans/group';
 import type { OB11GroupMember } from '@/interface/onebot';
@@ -38,6 +40,12 @@ export class Runtime {
   /** 已落地的资源段 id -> name（据 id 定位 folder 剔除项） */
   private resourceNameById = new Map<number, string>();
 
+  /**
+   * 已启用的画布缓存，供规则引擎流转时直接读取，避免每条消息查库。
+   * 后端增删改/启停画布后经 upsertCanvas 精准同步，启动时经 applyCanvases 全量加载。
+   */
+  private canvases: Canvas[] = [];
+
   private constructor() {}
 
   static getInstance(): Runtime {
@@ -52,7 +60,7 @@ export class Runtime {
   /** 解析目录绝对路径 */
   resolveFolderAbsPath(p: string): string {
     if (path.isAbsolute(p)) return path.resolve(p);
-    const base = path.resolve(process.cwd(), process.env.RESOURCE_PATH || '');
+    const base = path.resolve(process.cwd(), configService.get('RESOURCE_PATH', 'src/resources'));
     return path.resolve(base, p);
   }
 
@@ -298,6 +306,40 @@ export class Runtime {
       count++;
     }
     logger.info(`Rules applied: ${count} rule(s)`);
+  }
+
+  // ======================================================================
+  // 流程画布 canvases（规则引擎数据源）
+  // ======================================================================
+
+  /** 后端操作某画布（新增/更新/启停）后调用：按 id 精准同步启用画布缓存 */
+  async upsertCanvas(id: number, enabled: boolean): Promise<void> {
+    const idx = this.canvases.findIndex((c) => c.id === id);
+    if (!enabled) {
+      if (idx >= 0) this.canvases.splice(idx, 1);
+      logger.info(`Canvas removed from runtime: #${id}`);
+      return;
+    }
+    const canvas = await canvasService.findById(id);
+    if (!canvas) {
+      logger.warn(`upsertCanvas: #${id} not found in db, skip`);
+      return;
+    }
+    if (idx >= 0) this.canvases[idx] = canvas;
+    else this.canvases.push(canvas);
+    logger.info(`Canvas applied to runtime: #${id} ${canvas.name}`);
+  }
+
+  /** 以全部已启用画布重建缓存（启动 / 全量刷新） */
+  async applyCanvases(): Promise<void> {
+    const canvases = await canvasService.findEnabled();
+    this.canvases = canvases;
+    logger.info(`Canvases applied: ${canvases.length} enabled canvas(es)`);
+  }
+
+  /** 供规则引擎读取当前启用画布（返回引用，引擎只读不修改） */
+  getCanvases(): Canvas[] {
+    return this.canvases;
   }
 
   // ======================================================================

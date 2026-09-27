@@ -3,3 +3,5 @@ export { userBlacklistService, default as UserBlacklistService } from './userBla
 export { managedResourceService, default as ManagedResourceService } from './managedResource'
 export { resourceSettingService, default as ResourceSettingService } from './resourceSetting'
 export { commandRuleService, default as CommandRuleService } from './commandRule'
+export { canvasService, default as CanvasService } from './canvas'
+export { configService, default as ConfigService } from './systemConfig'

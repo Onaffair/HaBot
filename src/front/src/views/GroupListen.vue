@@ -1,70 +1,92 @@
 <template>
   <div class="page-container">
-    <el-card>
-      <template #header>
+    <a-card :bordered="false">
+      <template #title>
         <div class="card-header">
           <span>监听群组管理</span>
-          <el-button type="primary" @click="openDialog()">添加群组</el-button>
+          <a-button type="primary" @click="openDialog()">添加群组</a-button>
         </div>
       </template>
 
-      <el-table :data="tableData" border stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="groupId" label="群号" />
-        <el-table-column prop="enabled" label="启用状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'danger'" size="small">
-              {{ row.enabled ? '已启用' : '已禁用' }}
-            </el-tag>
+      <a-table
+        :columns="columns"
+        :data-source="tableData"
+        :loading="loading"
+        :pagination="false"
+        row-key="id"
+        bordered
+        size="middle"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'enabled'">
+            <a-tag :color="record.enabled ? 'success' : 'error'">
+              {{ record.enabled ? '已启用' : '已禁用' }}
+            </a-tag>
           </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" type="primary" @click="openDialog(row)">编辑</el-button>
-            <el-popconfirm title="确定删除该群组吗？" @confirm="handleDelete(row.groupId)">
-              <template #reference>
-                <el-button size="small" type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a-button size="small" type="link" @click="openDialog(record)">编辑</a-button>
+              <a-popconfirm
+                title="确定删除该群组吗？"
+                ok-text="删除"
+                cancel-text="取消"
+                @confirm="handleDelete(record.groupId)"
+              >
+                <a-button size="small" type="link" danger>删除</a-button>
+              </a-popconfirm>
+            </a-space>
           </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        </template>
+      </a-table>
+    </a-card>
 
     <!-- 添加/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑群组' : '添加群组'" width="500px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="群号" required>
-          <el-input v-model="form.groupId" :disabled="isEdit" placeholder="请输入群号" />
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="form.enabled" active-text="启用" inactive-text="禁用" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
-      </template>
-    </el-dialog>
+    <a-modal
+      v-model:open="dialogVisible"
+      :title="isEdit ? '编辑群组' : '添加群组'"
+      :confirm-loading="saving"
+      @ok="handleSave"
+    >
+      <a-form :model="form" layout="vertical" class="pt-2">
+        <a-form-item label="群号" required>
+          <a-input v-model:value="form.groupId" :disabled="isEdit" placeholder="请输入群号" />
+        </a-form-item>
+        <a-form-item label="启用状态">
+          <a-switch
+            v-model:checked="form.enabled"
+            checked-children="启用"
+            un-checked-children="禁用"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { groupListenApi, GroupListen } from '../api'
+import { onMounted, ref } from 'vue'
+import { message } from 'ant-design-vue'
+import { GroupListenApi } from '@/api'
+import type { GroupListen } from '@/api'
+
+const columns = [
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+  { title: '群号', dataIndex: 'groupId', key: 'groupId' },
+  { title: '启用状态', key: 'enabled', width: 120 },
+  { title: '操作', key: 'action', width: 180, fixed: 'right' },
+]
 
 const tableData = ref<GroupListen[]>([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
-const form = ref({ groupId: '', enabled: true })
+const form = ref<{ groupId: string, enabled: boolean }>({ groupId: '', enabled: true })
 
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await groupListenApi.list()
+    const res = await GroupListenApi.list()
     tableData.value = res.data || []
   } finally {
     loading.value = false
@@ -84,17 +106,17 @@ const openDialog = (row?: GroupListen) => {
 
 const handleSave = async () => {
   if (!form.value.groupId.trim()) {
-    ElMessage.warning('请输入群号')
+    message.warning('请输入群号')
     return
   }
   saving.value = true
   try {
     if (isEdit.value) {
-      await groupListenApi.update(form.value.groupId, { enabled: form.value.enabled })
-      ElMessage.success('更新成功')
+      await GroupListenApi.update(form.value.groupId, { enabled: form.value.enabled })
+      message.success('更新成功')
     } else {
-      await groupListenApi.create({ groupId: form.value.groupId, enabled: form.value.enabled })
-      ElMessage.success('添加成功')
+      await GroupListenApi.create({ groupId: form.value.groupId, enabled: form.value.enabled })
+      message.success('添加成功')
     }
     dialogVisible.value = false
     fetchData()
@@ -104,15 +126,10 @@ const handleSave = async () => {
 }
 
 const handleDelete = async (groupId: string) => {
-  await groupListenApi.delete(groupId)
-  ElMessage.success('删除成功')
+  await GroupListenApi.delete(groupId)
+  message.success('删除成功')
   fetchData()
 }
 
 onMounted(fetchData)
 </script>
-
-<style scoped>
-.page-container { max-width: 1200px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-</style>

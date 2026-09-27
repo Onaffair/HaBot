@@ -3,7 +3,7 @@ import path from 'path';
 import multer from 'multer';
 import { Express, Request, Response } from 'express';
 import os from 'os';
-import { listDirectories, FsNode } from '../../bot/utils/fsBrowser';
+import { listDirectories, listEntries, FsNode } from '../../bot/utils/fsBrowser';
 import { runtime } from '../../bot/core/runtime';
 
 /**
@@ -27,6 +27,27 @@ export function createFileSystemRoutes(app: Express) {
       }
       const dirs = listDirectories(target);
       res.json({ success: true, data: dirs });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // 列出指定路径下的子目录与文件 (混合)，供资源选择树懒加载下钻到具体文件。
+  // 目录 leaf=false 可继续展开；文件 leaf=true 作为可选叶子。
+  app.get(`${prefix}/entries`, (req: Request, res: Response) => {
+    try {
+      const target = (req.query.path as string) || '';
+      if (!target) {
+        return res.status(400).json({ success: false, message: '缺少 path 参数' });
+      }
+      if (!fs.existsSync(target)) {
+        return res.json({ success: true, data: [] });
+      }
+      const nodes = listEntries(target).map((n) => ({
+        ...n,
+        leaf: !n.isDir,
+      }));
+      res.json({ success: true, data: nodes });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }
@@ -60,6 +81,15 @@ export function createFileSystemRoutes(app: Express) {
           : []),
       ];
       res.json({ success: true, data: roots });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // 获取后端进程所在的项目根目录（作为资源选择树的默认定位锚点）
+  app.get(`${prefix}/project-root`, (_req: Request, res: Response) => {
+    try {
+      res.json({ success: true, data: process.cwd() });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }
@@ -154,6 +184,39 @@ export function createFileSystemRoutes(app: Express) {
         void runtime.rescanUnderPath(filePath);
       }
       res.json({ success: true, data: { files: uploaded } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // ========== 写入：删除资源文件 / 空目录 ==========
+
+  /**
+   * 删除资源文件或空目录，供画布等资源选择树内顺手清理素材。
+   * query: path=待删除的绝对路径。
+   * 安全约束：只允许删除文件与「空目录」，非空目录一律拒绝，避免递归误删整片素材库。
+   */
+  app.delete(`${prefix}/delete`, async (req: Request, res: Response) => {
+    try {
+      const target = decodeURIComponent((req.query.path as string) || '');
+      if (!target) {
+        return res.status(400).json({ success: false, message: '缺少 path 参数' });
+      }
+      if (!fs.existsSync(target)) {
+        return res.status(404).json({ success: false, message: `路径不存在: ${target}` });
+      }
+      const stat = fs.statSync(target);
+      if (stat.isDirectory()) {
+        if (fs.readdirSync(target).length > 0) {
+          return res.status(400).json({ success: false, message: '目录非空，请先清空其中的资源再删除' });
+        }
+        fs.rmdirSync(target);
+      } else {
+        fs.unlinkSync(target);
+      }
+      // 以父目录为重扫落点：删除后该目录下 children 需要失效
+      await runtime.rescanUnderPath(path.dirname(target));
+      res.json({ success: true, data: { path: target } });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

@@ -1,11 +1,17 @@
 import { AIPlatform, AIRequestOptions, BaseMessage } from "../types";
 import { AIRequestManager } from "../manager";
+import { configService } from '@/services/db/systemConfig';
 
 class ZhipuImagePlatform implements AIPlatform {
   name = 'zhipu'
   model = 'cogview-3-plus'
-  url = process.env.ZHIPUAI_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/images/generations'
-  secret = process.env.ZHIPUAI_API_KEY || ''
+  /** 取值改为访问器：每次请求实时读配置，DB 改动即刻生效 */
+  get url() {
+    return configService.get('ZHIPUAI_BASE_URL', 'https://open.bigmodel.cn/api/paas/v4/images/generations')
+  }
+  get secret() {
+    return configService.get('ZHIPUAI_API_KEY', '')
+  }
 
   adapter(messages: BaseMessage[], options?: AIRequestOptions) {
     // 图片生成没有 messages 概念，将所有 text 内容拼接为 prompt 字符串

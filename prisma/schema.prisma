@@ -74,3 +74,38 @@ model CommandRule {
 
   @@map("command_rules")
 }
+
+// ========== 流程画布 ==========
+// 存储前端 vue-flow 画布：节点与连线以 JSON 数组字符串落库（与 keywords 字段同风格），
+// 由后端负责序列化/反序列化；enabled 标记该流程是否允许底层执行。
+model Canvas {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // 画布名称（唯一标识，可用于事件绑定）
+  description String? // 画布描述
+  enabled     Boolean  @default(true) // 是否启用
+  nodes       String   @default("[]") // vue-flow 节点数组，JSON 字符串
+  edges       String   @default("[]") // vue-flow 连线数组，JSON 字符串
+  viewport    String? // 画布视口状态，JSON 字符串 { x, y, zoom }（可选，用于还原）
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("canvases")
+}
+
+// ========== 系统配置（键值对，由前端管理页面编辑） ==========
+// 替代 .env 中除 DATABASE_URL 外的全部可配置项；
+// requiresRestart=true 时保存后自动重启 Bot 连接。
+model SystemConfig {
+  id              Int      @id @default(autoincrement())
+  key             String   @unique
+  value           String   @default("")
+  category        String                    // websocket | http | bot | resource | ai | backend
+  label           String                    // 前端展示名
+  type            String   @default("string") // string | number | password
+  description     String?                   // 说明/placeholder
+  requiresRestart Boolean  @default(false)  // 修改后需重启 Bot
+  sortOrder       Int      @default(0)      // 前端展示排序
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}

@@ -1,12 +1,19 @@
 
 import { OB11GroupMember, OBResponse } from '@/interface/onebot'
 import axios, { AxiosRequestConfig } from 'axios'
+import { configService } from '@/services/db/systemConfig'
 
 const request = axios.create({
-  baseURL: process.env.HTTP_BASE_URL,
+  baseURL: configService.get('HTTP_BASE_URL', 'http://127.0.0.1:3000'),
   timeout: 30000,
 })
-request.defaults.headers['Authorization'] = process.env.HTTP_TOKEN
+request.defaults.headers['Authorization'] = configService.get('HTTP_TOKEN')
+
+/** 配置变更后热更新 HTTP 连接参数（无需重启进程） */
+export function refreshOneBotHttpConfig() {
+  request.defaults.baseURL = configService.get('HTTP_BASE_URL', 'http://127.0.0.1:3000')
+  request.defaults.headers['Authorization'] = configService.get('HTTP_TOKEN')
+}
 request.interceptors.request.use(c => {
   return c
 })

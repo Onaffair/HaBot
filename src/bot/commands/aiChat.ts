@@ -42,7 +42,7 @@ async function isReplyToBot(session: Session): Promise<boolean> {
   if (!reply?.data?.id) return false;
   try {
     const target = await session.getMsg(Number(reply.data.id));
-    return !!target && String(target.user_id) === process.env.ME;
+    return !!target && String(target.user_id) === beanFactory.getBeanValue<string>('me');
   } catch {
     return false;
   }

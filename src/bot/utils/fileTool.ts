@@ -2,6 +2,7 @@
 import * as fs from "fs";
 import * as os from 'os';
 import crypto from 'crypto';
+import { configService } from '@/services/db/systemConfig';
 
 export interface FileOutputOptions {
   baseDir?: string;
@@ -14,8 +15,8 @@ export class FileTool {
   private log: boolean;
 
   private constructor(options?: FileOutputOptions) {
-    // 与 FFmpegTool 一致：path.resolve(process.cwd(), process.env.outputDir)
-    const cwdBase = options?.baseDir ?? process.env.outputDir ?? 'output';
+    // 与 FFmpegTool 一致：从 configService 读取 outputDir
+    const cwdBase = options?.baseDir ?? configService.get('outputDir', 'src/output') ?? 'output';
     this.baseDir = path.resolve(process.cwd(), cwdBase);
     this.log = options?.log ?? false;
     this.ensureDir(this.baseDir);

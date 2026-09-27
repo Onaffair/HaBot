@@ -2,6 +2,7 @@ import { spawn } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import * as os from 'os'
+import { configService } from '@/services/db/systemConfig';
 
 
 export interface FfmpegOptions {
@@ -26,7 +27,7 @@ export class FFmpegTool {
     this.log = options?.log ?? false;
     this.overwrite = options?.overwrite ?? true;
 
-    this.outputDir = path.resolve(process.cwd(), process.env.outputDir);
+    this.outputDir = path.resolve(process.cwd(), configService.get('outputDir', 'src/output'));
 
     this.ensureDir(this.outputDir);
   }
