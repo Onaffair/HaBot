@@ -10,6 +10,9 @@ const props = defineProps<NodeProps<MessageNodeData>>()
 
 const def = computed(() => nodeRegistry.resolve('message'))
 
+/** at 段代指触发者的模板 token（与 segmentEditor 写入的值一致） */
+const AT_SENDER_TOKEN = '{{sender}}'
+
 // 段类型 → 卡片上的短标签
 const SEGMENT_SHORT: Record<MessageSegmentType, string> = {
   text: '文字',
@@ -21,13 +24,32 @@ const SEGMENT_SHORT: Record<MessageSegmentType, string> = {
   poke: '戳',
 }
 
+/** at 段目标 token 的可读形式（多个目标在 qq 里逗号分隔） */
+function atTokenLabel(token: string): string {
+  if (token === 'all') return '全体'
+  if (token === AT_SENDER_TOKEN) return '发送者'
+  return token
+}
+
+/** @ 目标摘要：最多列两个，多余以示人数 */
+function describeAt(qq?: string): string {
+  const labels = (qq || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map(atTokenLabel)
+  if (!labels.length) return SEGMENT_SHORT.at
+  if (labels.length <= 2) return `@${labels.join('、')}`
+  return `@${labels.slice(0, 2).join('、')} 等${labels.length}人`
+}
+
 /** 单个段的简述: 文字带内容、@ 带目标、文件带文件名 */
 function describe(seg: MessageSegment): string {
   switch (seg.type) {
     case 'text':
       return seg.text ? `${SEGMENT_SHORT.text}：${seg.text.slice(0, 8)}${seg.text.length > 8 ? '…' : ''}` : SEGMENT_SHORT.text
     case 'at':
-      return `@${seg.qq === 'all' ? '全体' : seg.name || seg.qq || '?'}`
+      return describeAt(seg.qq)
     case 'image':
     case 'video':
     case 'record':

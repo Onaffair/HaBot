@@ -4,7 +4,6 @@ import type { Bean } from '@/core/bean'
 import { aiChatBean } from './aiChat'
 import { groupBean } from './group'
 import { meBean } from './me'
-import { resourceBean } from './resource'
 
 /**
  * Bean 显式注册表：新增配置项先在实现文件导出 Bean 定义，再在此列表登记。
@@ -13,7 +12,6 @@ import { resourceBean } from './resource'
 const beans: Bean[] = [
   meBean,
   aiChatBean,
-  resourceBean,
   groupBean,
 ]
 

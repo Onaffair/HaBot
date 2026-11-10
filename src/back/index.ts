@@ -35,26 +35,13 @@ export function buildBackendApp(): Express {
 
 function printRoutes() {
   logger.info(`Backend server running at http://localhost:${BACKEND_PORT}`);
-  // logger.info(`API 文档:`);
-  // logger.info(`  GET    /api/group-listens          - 监听群组列表`);
-  // logger.info(`  POST   /api/group-listens          - 添加监听群组`);
-  // logger.info(`  PUT    /api/group-listens/:groupId - 更新监听群组`);
-  // logger.info(`  DELETE /api/group-listens/:groupId - 删除监听群组`);
-  // logger.info(`  GET    /api/user-blacklist          - 黑名单列表`);
-  // logger.info(`  POST   /api/user-blacklist          - 添加黑名单`);
-  // logger.info(`  PUT    /api/user-blacklist/:qq      - 更新黑名单`);
-  // logger.info(`  DELETE /api/user-blacklist/:qq      - 移出黑名单`);
-  // logger.info(`  GET    /api/managed-resources       - 资源段列表`);
-  // logger.info(`  POST   /api/managed-resources       - 创建资源段`);
-  // logger.info(`  PUT    /api/managed-resources/:id   - 更新资源段`);
-  // logger.info(`  DELETE /api/managed-resources/:id   - 删除资源段`);
-  // logger.info(`  GET/PUT /api/resource-settings/default-dir - 默认管理目录`);
-  // logger.info(`  GET    /api/filesystem/dirs         - 浏览服务器目录(子目录)`);
-  // logger.info(`  GET    /api/filesystem/roots        - 目录树初始根`);
-  // logger.info(`  GET    /api/command-rules           - 触发规则列表`);
-  // logger.info(`  POST   /api/command-rules           - 创建触发规则`);
-  // logger.info(`  PUT    /api/command-rules/:id       - 更新触发规则`);
-  // logger.info(`  DELETE /api/command-rules/:id       - 删除触发规则`);
+  logger.info(`API 文档:`);
+  logger.info(`  CRUD   /api/group-listens    - 监听群组（含 joined-groups 与群成员，供 @ 选择）`);
+  logger.info(`  CRUD   /api/user-blacklist   - 用户黑名单`);
+  logger.info(`  CRUD   /api/canvases         - 流程画布（含 GET /:id/logs 流转日志）`);
+  logger.info(`  GET    /api/filesystem/*     - 服务器目录浏览与资源文件读写`);
+  logger.info(`  GET/PUT /api/system-configs  - 系统配置`);
+  logger.info(`  POST   /api/bot-control/*    - Bot 启停`);
 }
 
 /**

@@ -22,18 +22,6 @@ const router = createRouter({
           meta: { title: '监听群组' },
         },
         {
-          path: 'managed-resources',
-          name: 'ManagedResource',
-          component: () => import('@/views/ManagedResource.vue'),
-          meta: { title: '目录管理' },
-        },
-        {
-          path: 'command-rules',
-          name: 'CommandRule',
-          component: () => import('@/views/CommandRule.vue'),
-          meta: { title: '触发规则' },
-        },
-        {
           path: 'user-blacklist',
           name: 'UserBlacklist',
           component: () => import('@/views/UserBlacklist.vue'),

@@ -2,8 +2,7 @@ import { BeanFactory } from '@/core/bean';
 import { MessageItem, GroupMessageSend, OB11MessageImage, OB11MessageVideo, OB11MessageRecord } from "@/interface/onebot";
 import { ActionResult } from '@/interface/actoin';
 import { Session } from "@/core/session";
-import { createLogger } from '@utils/logger'
-import type { ResourceConfig } from '@/beans/resource';
+import { guessResourceKind, resolveResourceFile } from './resourcePath';
 
 /**
  * 消息工具集与链式构造器。
@@ -11,89 +10,28 @@ import type { ResourceConfig } from '@/beans/resource';
  * 演进目标：
  *  1) 通过 MessageBuilder 链式拼装 ActionResult，避免调用方手工组装 items 数组；
  *  2) 资源解析支持多段路径参数（目录 -> 随机、文件 -> 精确），
- *     按扩展名动态选择 image / video / record 消息段类型。
+ *     按扩展名动态选择 image / video / record 消息段类型，
+ *     路径直接落在文件系统上（相对值以 RESOURCE_PATH 为基准），
+ *     统一由 utils/resourcePath 承担。
  */
 const factory = BeanFactory.getInstance()
-const logger = createLogger('MessageUtils')
 
 // ============================================================================
-// 资源类型识别
+// 资源段构造：路径解析规则见 utils/resourcePath
 // ============================================================================
-
-/** 语音类扩展名：record 消息段 */
-const VOICE_EXT_RE = /\.(mp3|wav|ogg|amr|silk)$/i
-/** 视频类扩展名：video 消息段 */
-const VIDEO_EXT_RE = /\.(mp4|mov|avi|webm|flv|m4v|mkv)$/i
-
-type ResourceKind = 'image' | 'video' | 'record'
-
-/** 依据文件扩展名推断消息段类型；未识别后缀按 image 兜底以适配绝大多数资源目录 */
-function guessKind(file: string): ResourceKind {
-  if (VOICE_EXT_RE.test(file)) return 'record'
-  if (VIDEO_EXT_RE.test(file)) return 'video'
-  return 'image'
-}
-
-/** 统一路径分隔符，屏蔽 Windows/Posix 差异，方便按段匹配 */
-function normalize(p: string): string {
-  return p.replace(/\\/g, '/')
-}
-
-/**
- * 资源路径解析：首段为资源 folder 名称（对应 resource bean），其后每一段
- * 依次视为目录名或文件名。
- *   - 末段是目录（或路径段）→ 在该目录下随机挑一个资源
- *   - 末段是文件（带扩展名）→ 精确命中该文件
- * 为兼容旧 `makeRandomResource(folder, name)` 语义，精确匹配失败时降级为子串匹配。
- */
-function resolveResourcePath(segments: string[]): string | undefined {
-  if (segments.length === 0) {
-    logger.warn('resolveResourcePath: empty segments')
-    return
-  }
-  const [folderName, ...rest] = segments
-  const resource = factory.getBeanValue<ResourceConfig>('resource')
-  const targetFolder = resource?.folder?.find(f => f.name === folderName)
-  let candidates = ((targetFolder?.children || []) as string[]).filter(Boolean)
-  if (candidates.length === 0) {
-    logger.warn(`no resource under folder: ${folderName}`)
-    return
-  }
-  for (const seg of rest) {
-    if (!seg) continue
-    const lowerSeg = seg.toLowerCase()
-    // 优先按目录段/文件段精确匹配：/seg/ 表示中间目录；/seg 结尾表示文件名
-    const dirHit = candidates.filter(p => normalize(p).toLowerCase().includes(`/${lowerSeg}/`))
-    const fileHit = candidates.filter(p => normalize(p).toLowerCase().endsWith(`/${lowerSeg}`))
-    const exact = Array.from(new Set([...dirHit, ...fileHit]))
-    if (exact.length > 0) {
-      candidates = exact
-      continue
-    }
-    // 退化为子串包含（保留旧 name 过滤语义，例如 '231' 命中 '231xx.png'）
-    const fuzzy = candidates.filter(p => normalize(p).toLowerCase().includes(lowerSeg))
-    if (fuzzy.length === 0) {
-      logger.warn(`no resource matched path segment: ${seg}`)
-      return
-    }
-    candidates = fuzzy
-  }
-  const randIndex = Math.floor(Math.random() * candidates.length)
-  return candidates[randIndex]
-}
 
 /**
  * 构造一段资源消息（image/video/record 由扩展名动态决定）。
- * 支持变长路径参数：
- *   `makeResource('cat')` — 在 cat folder 下随机
+ * 支持变长路径参数（相对 RESOURCE_PATH 或绝对路径）：
+ *   `makeResource('cat')` — 在 RESOURCE_PATH/cat 目录下随机
  *   `makeResource('cat', 'sub')` — 在 cat/sub 目录下随机
- *   `makeResource('cat', 'a.png')` — 精确使用 a.png
+ *   `makeResource('cat', 'a.png')` — 精确使用 cat/a.png
  * 未命中返回 undefined，调用方按业务决定是否忽略。
  */
 export function makeResource(...segments: string[]): OB11MessageImage | OB11MessageVideo | OB11MessageRecord | undefined {
-  const file = resolveResourcePath(segments)
+  const file = resolveResourceFile(segments)
   if (!file) return
-  const kind = guessKind(file)
+  const kind = guessResourceKind(file)
   return { type: kind, data: { file } } as any
 }
 
@@ -222,7 +160,7 @@ export class MessageBuilder {
 
   /**
    * 变长路径段解析资源并追加；未命中时静默跳过（不影响链式后续调用）。
-   * @param segments 首段为 folder 名，其后为目录名或文件名
+   * @param segments 资源路径段（相对 RESOURCE_PATH 或绝对路径），末段为目录则随机、为文件则精确
    */
   resource(...segments: string[]): this {
     const item = makeResource(...segments)
@@ -251,7 +189,7 @@ export class MessageBuilder {
 
 export function judgeIsAtMe(session: Session) {
   const me = factory.getBeanValue<string>('me')
-  return session.message.some(m => m?.type === 'at' && m?.data?.qq === me)
+  return session.message?.some(m => m?.type === 'at' && m?.data?.qq === me) ?? false
 }
 
 /** 保留旧导出以避免跨模块潜在引用被拆散 */

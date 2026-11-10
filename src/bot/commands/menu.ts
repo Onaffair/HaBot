@@ -1,5 +1,5 @@
 import { Command, CommandFactory } from '@/core/command'
-import { MessageBuilder } from '@/utils/message'
+import { MessageBuilder } from '@/utils/messageBuilder'
 
 /** 菜单命令：列出当前已注册的全部命令，由 index 按需显式注册 */
 export const maodieCmd: Command = {

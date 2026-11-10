@@ -3,7 +3,6 @@ import { configService } from '../../bot/services/db'
 import App from '../../bot/core/app'
 import { BeanFactory } from '../../bot/core/bean'
 import { refreshOneBotHttpConfig } from '../../bot/api/common/oneBot'
-import type { ResourceConfig } from '../../bot/beans/resource'
 import { createLogger } from '../../bot/utils/logger'
 import { resful, HttpError } from '../utils/resfulAPI'
 
@@ -27,22 +26,17 @@ const CATEGORY_META: Record<string, { label: string; order: number }> = {
   resource: { label: '资源路径', order: 4 },
   ai: { label: 'AI 配置', order: 5 },
   backend: { label: '后端服务', order: 6 },
+  spider: { label: '爬虫抓取', order: 7 },
   custom: { label: '自定义', order: 90 },
 }
 
 /**
  * 配置 → 运行态同步：部分配置被缓存到 Bean 运行态中，DB 改完需回写一次才生效。
- * 未列出的 key 由消费方按需实时读取（或标记 requiresRestart 走重启流程）。
+ * 未列出的 key 由消费方按需实时读取（或标记 requiresRestart 走重启流程）；
+ * RESOURCE_PATH 由 bot/utils/resourcePath 每次实时读取，无需回写。
  */
 const BEAN_SYNC: Record<string, () => void> = {
   ME: () => BeanFactory.getInstance().setBeanValue('me', configService.get('ME')),
-  RESOURCE_PATH: () => {
-    const fac = BeanFactory.getInstance()
-    const current = fac.getBeanValue<ResourceConfig>('resource')
-    if (current) {
-      fac.setBeanValue('resource', { ...current, path: configService.get('RESOURCE_PATH', 'src/resources') })
-    }
-  },
 }
 
 export function createSystemConfigRoutes(app: Express) {

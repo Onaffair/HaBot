@@ -20,6 +20,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "src/bot/api", "src/bot/utils/message.ts"],
+  "include": ["src", "src/bot/api", "src/bot/utils/messageBuilder.ts"],
   "exclude": ["node_modules", "dist", "src/front", "test.js"]
 }

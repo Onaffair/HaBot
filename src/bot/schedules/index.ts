@@ -2,7 +2,7 @@ import { ScheduleFactory } from '@/core/schedule'
 import type { Schedule } from '@/core/schedule'
 
 import { syncGroupMembersSchedule } from './refreshGroupMembers'
-import { refreshResourcesSchedule } from './refreshResources'
+// import { yysRankSchedule } from './yysRank'
 
 /**
  * 定时任务显式注册表：新增任务先在实现文件导出定义，再在此列表登记。
@@ -10,7 +10,7 @@ import { refreshResourcesSchedule } from './refreshResources'
  */
 const schedules: Schedule[] = [
   syncGroupMembersSchedule,
-  refreshResourcesSchedule,
+  // yysRankSchedule,
 ]
 
 const fac = ScheduleFactory.getInstance()

@@ -13,12 +13,13 @@ export interface Command {
 
 /**
  * 动态命令的扩展标识，用于运行时精确增删某个来源注册的命令。
- * syncKey 形如 `managed-resource:12`，保证幂等注册与精准移除，避免误伤其它命令。
+ * syncKey 形如 `${source}:${sourceId}`，保证幂等注册与精准移除，避免误伤其它命令。
+ * 注：资源段/触发规则类配置已改由流程画布表达，当前无内置使用者，机制保留备用。
  */
 export interface DynamicCommandExt {
-  /** 命令来源，如 'managed-resource' */
+  /** 命令来源标识 */
   source: string;
-  /** 来源记录 ID（如资源段 id） */
+  /** 来源记录 ID（如数据库行 id） */
   sourceId: string | number;
   /** 唯一标识：`${source}:${sourceId}`，作为 registry/remove 的 key */
   syncKey: string;

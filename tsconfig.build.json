@@ -1,4 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "test.js"]
+  // extends 的同名字段是整体覆盖而非合并：此处的 exclude 会替换基类的 exclude，
+  // 因此需重复基类排除项，否则 src/front（自带 tsconfig 的前端工程）会被后端编译卷入。
+  "exclude": ["node_modules", "dist", "test.js", "src/front"]
 }

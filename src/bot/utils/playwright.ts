@@ -215,9 +215,63 @@ export class PlaywrightManager {
       return buffer;
     } finally {
       // 关闭页面及其所属上下文，避免资源泄漏
-      // const context = page.context();
-      // await page.close().catch(() => { });
-      // await context.close().catch(() => { });
+      const context = page.context();
+      await page.close().catch(() => { });
+      await context.close().catch(() => { });
+    }
+  }
+
+  /**
+   * 将一段完整 HTML 渲染为图片：在新页面中 setContent 后整页截图并返回 Buffer。
+   * @remarks 用于把结构化数据（如投票分布）先拼成 HTML 再产出图片，无需起本地服务。
+   * @param html 完整的 HTML 文档字符串
+   * @param options 截图配置项
+   * @returns 截图 Buffer（默认 PNG 格式）
+   */
+  async screenshotHtml(
+    html: string,
+    options?: {
+      /** 视口宽度，默认 1000 */
+      width?: number;
+      /** 视口高度，默认 800（fullPage 为 true 时仅作初始视口） */
+      height?: number;
+      /** 是否截取整个页面（长图），默认 true */
+      fullPage?: boolean;
+      /** 图片格式，默认 png */
+      type?: "png" | "jpeg";
+      /** jpeg 图片质量 1-100，仅 type 为 jpeg 时生效 */
+      quality?: number;
+      /** 内容设置后的额外等待时间（毫秒），默认 300，留出字体/绘图渲染时间 */
+      delay?: number;
+    }
+  ): Promise<Buffer> {
+    const {
+      width = 1000,
+      height = 800,
+      fullPage = true,
+      type = "png",
+      quality,
+      delay = 300,
+    } = options ?? {};
+
+    const page = await this.createPage();
+    try {
+      await page.setViewportSize({ width, height });
+      await page.setContent(html, { waitUntil: "networkidle" });
+      if (delay > 0) {
+        await page.waitForTimeout(delay);
+      }
+      const buffer = await page.screenshot({
+        fullPage,
+        type,
+        ...(type === "jpeg" && quality !== undefined ? { quality } : {}),
+        animations: "disabled",
+      });
+      return buffer;
+    } finally {
+      const context = page.context();
+      await page.close().catch(() => { });
+      await context.close().catch(() => { });
     }
   }
 

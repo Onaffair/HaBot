@@ -2,7 +2,7 @@
 import { BeanFactory } from '@/core/bean';
 import { Command } from "@/core/command";
 import { OB11MessageAt } from "@/interface/onebot";
-import { MessageBuilder } from "@/utils/message";
+import { MessageBuilder } from "@/utils/messageBuilder";
 import { createLogger } from '@utils/logger'
 import type { GroupConfig } from '@/beans/group';
 

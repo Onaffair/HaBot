@@ -1,7 +1,7 @@
 import { AIRequestManager } from '@ai'
 import type { BaseMessage } from '@ai'
 import { createLogger } from '@/utils/logger'
-import { extractMessageContent } from '@utils/messageContent'
+import { MessageContentParser } from '@utils/messageContent'
 import { executorFactory } from '../executorFactory'
 import type { AiNodeData, NodeExecutor } from '../types'
 
@@ -30,7 +30,7 @@ const aiNodeExecutor: NodeExecutor = {
       messages.push({ role: 'system', content: [{ type: 'text', text: systemPrompt }] })
     }
     // 用户侧内容取当前会话消息（含图片/语音等富媒体，交由平台适配器过滤支持项）
-    const userContent = extractMessageContent(ctx.session.message || [])
+    const userContent = await MessageContentParser.extract(ctx.session.message || [])
     if (userContent.length > 0) {
       messages.push({ role: 'user', content: userContent })
     }

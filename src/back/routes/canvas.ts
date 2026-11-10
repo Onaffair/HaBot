@@ -1,18 +1,20 @@
 import { Express } from 'express';
-import { canvasService } from '../../bot/services/db';
+import { canvasService, canvasFlowLogService } from '../../bot/services/db';
 import { runtime } from '../../bot/core/runtime';
 import { resful, HttpError, NO_CONTENT, pageQuery, pathId } from '../utils/resfulAPI';
+import type { FlowLogStatus } from '../../bot/services/db/canvasFlowLog';
 
 // ============================================================================
 // 流程画布 RESTful 路由
 // ----------------------------------------------------------------------------
 // handler 不接触 res，仅返回资源数据或抛异常，由 resful 统一映射状态码：
-// - GET    /api/canvases          200 { list, total, pageNum, pageSize }（对接 useTable）
-// - GET    /api/canvases/:id      200 完整画布 / 404
-// - POST   /api/canvases          201 新建的画布
-// - PUT    /api/canvases/:id      200 更新后的画布
-// - PATCH  /api/canvases/:id/toggle 200 切换启用状态
-// - DELETE /api/canvases/:id      204 无响应体
+// - GET    /api/canvases              200 { list, total, pageNum, pageSize }（对接 useTable）
+// - GET    /api/canvases/:id          200 完整画布 / 404
+// - GET    /api/canvases/:id/logs     200 该画布的流转日志分页 { list, total, ... }
+// - POST   /api/canvases              201 新建的画布
+// - PUT    /api/canvases/:id          200 更新后的画布
+// - PATCH  /api/canvases/:id/toggle   200 切换启用状态
+// - DELETE /api/canvases/:id          204 无响应体（连带清理流转日志）
 // ============================================================================
 
 /** nodes/edges 合法性校验：若传入必须为数组 */
@@ -47,6 +49,28 @@ export function createCanvasRoutes(app: Express) {
   app.get(
     `${prefix}/:id`,
     resful((req) => canvasService.findById(pathId(req)), { notFoundMessage: '画布不存在' }),
+  );
+
+  // 画布流转日志分页（query: pageNum/pageSize/keyword/status）
+  app.get(
+    `${prefix}/:id/logs`,
+    resful(async (req) => {
+      const id = pathId(req);
+      if (!(await canvasService.findById(id))) return null; // → 404
+      const { pageNum, pageSize, skip, take, keyword } = pageQuery(req);
+      // status 仅接受 success / error，其他值一律视为不过滤
+      const rawStatus = ((req.query.status as string) || '').trim();
+      const status: FlowLogStatus | undefined =
+        rawStatus === 'success' || rawStatus === 'error' ? rawStatus : undefined;
+      const { list, total } = await canvasFlowLogService.findPaged({
+        skip,
+        take,
+        canvasId: id,
+        keyword,
+        status,
+      });
+      return { list, total, pageNum, pageSize };
+    }, { notFoundMessage: '画布不存在' }),
   );
 
   // 创建画布
@@ -92,13 +116,14 @@ export function createCanvasRoutes(app: Express) {
     }, { notFoundMessage: '画布不存在' }),
   );
 
-  // 删除画布：成功返回 204 无响应体
+  // 删除画布：成功返回 204 无响应体（连带清理该画布的流转日志）
   app.delete(
     `${prefix}/:id`,
     resful(async (req) => {
       const id = pathId(req);
       if (!(await canvasService.findById(id))) return null; // → 404
       await canvasService.delete(id);
+      await canvasFlowLogService.deleteByCanvas(id);
       void runtime.upsertCanvas(id, false); // 从引擎画布缓存中剔除
       return NO_CONTENT; // → 204
     }, { notFoundMessage: '画布不存在' }),

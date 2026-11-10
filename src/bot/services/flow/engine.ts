@@ -1,6 +1,7 @@
 import { createLogger } from '@/utils/logger'
-import { judgeIsAtMe } from '@/utils/message'
+import { judgeIsAtMe } from '@/utils/messageBuilder'
 import { runtime } from '@/core/runtime'
+import { canvasFlowLogService } from '@/services/db/canvasFlowLog'
 import type { Session } from '@/core/session'
 import type { Canvas } from '@/services/db/canvas'
 import { ExecutionContext } from './context'
@@ -12,10 +13,12 @@ import type { FlowEdge, FlowNode, FlowRunResult, NodeKind, NodeResult, TriggerNo
 // ----------------------------------------------------------------------------
 // 以「触发器为起点、消息发送为终点」，按画布（canvas）配置的节点与连线流转：
 //  1) matchTrigger —— 纯判断画布入口触发节点是否命中当前消息（供命令 match 复用）；
-//  2) run          —— 从命中的触发节点出发做广度优先流转，逐节点交执行器处理，
+//  2) run          —— 一条消息只选择一个画布执行（按画布 id 升序取首个命中的），
+//                     从该画布命中的触发节点出发做广度优先流转，逐节点交执行器处理，
 //                     执行器产出经 ExecutionContext 向后传递，output 节点落地发送；
 //  3) 每个节点独立 try/catch，异常记入执行轨迹（trace）并写日志，单点失败不中断整体。
 // 画布数据来自 Runtime 的启用画布缓存（启动/后端改动时同步），引擎本身不查库。
+// 每次流转结果旁路写入画布日志（canvas_flow_logs），供管理界面回溯，写失败不影响主流程。
 // ============================================================================
 
 const logger = createLogger('RuleEngine')
@@ -67,7 +70,7 @@ export class RuleEngine {
     return true
   }
 
-  /** 取画布中命中当前消息的触发节点（一个画布可有多个触发入口） */
+  /** 取画布中命中当前消息的首个触发节点（一个画布可有多个触发入口，只取其一） */
   private matchedTriggers(canvas: Canvas, session: Session): FlowNode[] {
     return (canvas.nodes as FlowNode[]).filter(
       (n) => n.type === 'trigger' && this.matchTriggerData(n.data as TriggerNodeData, session),
@@ -83,17 +86,34 @@ export class RuleEngine {
   // 流转执行
   // ==========================================================================
 
-  /** 对所有命中的启用画布依次流转，返回每个画布的运行结果 */
-  async run(session: Session): Promise<FlowRunResult[]> {
-    const results: FlowRunResult[] = []
+  /**
+   * 为消息选取唯一执行画布：一条消息只匹配一个画布，不多个画布同时流转。
+   * 画布缓存按 id 升序，多个画布命中时取最先命中的一个（即 id 最小者）；
+   * 同一画布内多个触发入口命中时也只取首个入口。
+   */
+  private selectCanvas(session: Session): { canvas: Canvas; entries: FlowNode[] } | null {
     for (const canvas of runtime.getCanvases()) {
       const entries = this.matchedTriggers(canvas, session)
-      if (entries.length === 0) continue
-      const result = await this.runCanvas(canvas, entries, session)
-      results.push(result)
-      this.pushRecent(result)
+      if (entries.length > 0) {
+        if (entries.length > 1) {
+          logger.info(`Canvas '${canvas.name}' has ${entries.length} matched trigger(s), use the first one only`)
+        }
+        return { canvas, entries: [entries[0]] }
+      }
     }
-    return results
+    return null
+  }
+
+  /** 流转消息命中的唯一画布；无命中画布时返回 null，不执行任何流程 */
+  async run(session: Session): Promise<FlowRunResult | null> {
+    const selected = this.selectCanvas(session)
+    if (!selected) return null
+    const { canvas, entries } = selected
+    logger.info(`Message matched canvas '${canvas.name}' (#${canvas.id}), skip other canvases`)
+    const result = await this.runCanvas(canvas, entries, session)
+    this.pushRecent(result)
+    this.persistLog(result, session)
+    return result
   }
 
   /** 单画布流转：从给定触发入口节点做广度优先，逐节点执行并按连线选路 */
@@ -200,6 +220,22 @@ export class RuleEngine {
   private pushRecent(result: FlowRunResult): void {
     this.recentRuns.push(result)
     if (this.recentRuns.length > RECENT_RUNS_LIMIT) this.recentRuns.shift()
+  }
+
+  /**
+   * 旁路落库本次流转摘要（群号 / 触发消息 / 状态 / 异常摘要 / 时间）。
+   * 只要有一个节点失败即记为 error，异常摘要按「节点名(类型): 原因」拼装，
+   * 供前端日志弹窗悬停查看；服务内部已吞异常，此处不阻塞流转。
+   */
+  private persistLog(result: FlowRunResult, session: Session): void {
+    const failed = result.steps.filter((s) => !s.ok)
+    void canvasFlowLogService.record({
+      canvasId: result.canvasId,
+      groupId: session.isGroup ? String(session.groupId ?? '') : '',
+      message: session.textContent,
+      status: failed.length > 0 ? 'error' : 'success',
+      error: failed.length > 0 ? failed.map((s) => `${s.nodeLabel}(${s.kind}): ${s.error || '未知错误'}`).join('；') : null,
+    })
   }
 
   /** 近期流转记录（只读快照），用于日志排查与外部观测 */

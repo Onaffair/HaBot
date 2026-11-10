@@ -1,7 +1,7 @@
 import { createLogger } from '@utils/logger';
 import request from '@/utils/webCrawlerRequest';
 import md5 from '@/utils/md5';
-import { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 
 const logger = createLogger('BGImage');
 
@@ -43,13 +43,38 @@ export async function getVideoUrl(
     }
   )
 }
-/**获取B站视频 */
-
 // 资源获取
-export async function downloadFromUrl(url: string, option: AxiosRequestConfig = {}): Promise<any> {
+export function downloadFromUrl(url: string, option: AxiosRequestConfig = {}): Promise<any> {
   return request.get(url,
     option
   )
+}
+
+/**
+ * 跟随重定向抓取页面文本，返回最终地址与页面内容。
+ * @remarks 统一 request 封装的拦截器只透出 data，短链还原必须拿到重定向后的最终 URL，
+ *   故此处使用 axios 原始实例；失败直接抛出，由调用方决定降级策略。
+ * @param url 目标地址（支持短链）
+ * @param option 额外的 axios 配置（请求头、超时等）
+ */
+export async function fetchPageText(url: string, option: AxiosRequestConfig = {}) {
+  const res = await axios.get(url, {
+    timeout: 15000,
+    responseType: 'text',
+    maxRedirects: 5,
+    ...option,
+  })
+  return {
+    // responseUrl 为 axios 跟随重定向后的最终地址（node 适配器挂在 request.res 上）
+    finalUrl: (res.request?.res?.responseUrl as string) || url,
+    text: typeof res.data === 'string' ? res.data : String(res.data ?? ''),
+  }
+}
+
+
+
+export function getDYJC() {
+  return request.get(`https://yysrank.com/api/dyjc/get`)
 }
 
 

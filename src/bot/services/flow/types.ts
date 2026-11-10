@@ -23,7 +23,11 @@ export interface BaseNodeData {
 export interface TriggerNodeData extends BaseNodeData {
   /** 是否要求 @机器人：是 / 否 / 任意 */
   atMe?: 'yes' | 'no' | 'any'
-  /** 关键词列表（命中任一即触发；为空表示不做关键词限制） */
+  /**
+   * 关键词列表（命中任一即触发）。
+   * ⚠️ 为空表示「不做关键词限制」：keywords 与 pattern 同时为空时该触发器会命中每一条消息，
+   * 配置画布时至少要填一项。
+   */
   keywords?: string[]
   /** 正则表达式字符串（可选，非空时参与匹配） */
   pattern?: string
@@ -59,11 +63,15 @@ export interface MessageSegment {
   type: MessageSegmentType
   /** text 段内容（支持 {{路径}} 引用上游数据） */
   text?: string
-  /** at 段目标 QQ 号（'all' 表示 @全体） */
+  /**
+   * at 段目标 QQ 号：多个目标以英文逗号分隔（发送时展开为多个 at 段），
+   * 'all' 表示 @全体，'{{sender}}' 表示触发本条消息的发送者（发送时按上下文解析）。
+   * 发送时还会按当前会话的群过滤：私聊（群号为空）整段丢弃，不在本群的成员目标丢弃。
+   */
   qq?: string
-  /** at 段显示昵称（可选，仅展示用） */
+  /** at 段显示昵称（可选，仅展示用）；多目标时按位与 qq 对应，数量不一致则忽略 */
   name?: string
-  /** image / video / record 段的资源路径：末段带扩展名视为具体文件，否则为目录（发送时随机选取） */
+  /** image / video / record 段的资源路径：绝对路径或相对 RESOURCE_PATH；末段带扩展名视为具体文件，否则为目录（发送时随机选取） */
   file?: string
   /** face 段表情 ID（字符串形式的数字） */
   faceId?: string

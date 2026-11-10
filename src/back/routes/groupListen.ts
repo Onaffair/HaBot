@@ -1,6 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../../bot/utils/db';
 import { runtime } from '../../bot/core/runtime';
+import { groupMemberService } from '../../bot/utils/groupMembers';
 
 export function createGroupListenRoutes(app: Express) {
   const prefix = '/api/group-listens';
@@ -10,6 +11,27 @@ export function createGroupListenRoutes(app: Express) {
     try {
       const list = await db.groupListen?.findMany() || [];
       res.json({ success: true, data: list });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // bot 加入过的群（画布 @ 对象级联的一级菜单）
+  // 静态路径必须先于 `/:groupId` 注册，否则会被动态段吞掉
+  app.get(`${prefix}/joined-groups`, async (_req: Request, res: Response) => {
+    try {
+      res.json({ success: true, data: await groupMemberService.listJoinedGroups() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // 指定群的成员（级联二级菜单，展开时才拉）；refresh=1 绕过后端成员缓存
+  app.get(`${prefix}/joined-groups/:groupId/members`, async (req: Request, res: Response) => {
+    try {
+      const groupId = req.params.groupId as string;
+      const refresh = ['1', 'true'].includes(String(req.query.refresh ?? ''));
+      res.json({ success: true, data: await groupMemberService.listMembers(groupId, refresh) });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
     }

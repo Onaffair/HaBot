@@ -1,5 +1,5 @@
 import request from './request'
-import type { CanvasPage, CanvasPayload, CanvasRecord } from './types'
+import type { CanvasFlowLogPage, CanvasPage, CanvasPayload, CanvasRecord } from './types'
 
 // ============================================================================
 // 流程画布 API
@@ -13,6 +13,14 @@ class CanvasApi {
   /** 分页列表：返回值可直接被 useTable 解构 { list, total } */
   static list(params: { pageNum?: number; pageSize?: number; keyword?: string } = {}) {
     return request.get<any, CanvasPage>('/canvases', { params })
+  }
+
+  /** 单个画布的流转日志分页（keyword 匹配消息内容，status 过滤 success/error） */
+  static logs(
+    id: number,
+    params: { pageNum?: number; pageSize?: number; keyword?: string; status?: string } = {},
+  ) {
+    return request.get<any, CanvasFlowLogPage>(`/canvases/${id}/logs`, { params })
   }
 
   /** 获取单个画布完整数据 (nodes/edges/viewport) */

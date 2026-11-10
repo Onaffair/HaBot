@@ -1,6 +1,6 @@
 import { Command } from "@/core/command";
 import { createLogger } from "@/utils/logger";
-import { MessageBuilder } from "@/utils/message";
+import { MessageBuilder } from "@/utils/messageBuilder";
 import { PlaywrightManager } from "@/utils/playwright";
 import { isBlockedUrl } from "@/utils/webShotBlacklist";
 

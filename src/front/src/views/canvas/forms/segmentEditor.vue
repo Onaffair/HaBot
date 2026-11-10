@@ -6,19 +6,22 @@
 // - v-model 绑定 MessageSegment[]，每次变更整体回写新数组 (触发上层响应)
 // - 段类型与后端 onebot.ts 的 OB11 消息段对齐: text / at / image / video /
 //   record(语音) / face / poke，不同类型渲染各自的入参字段
+// - at 段不走通用输入框: 由「发送者 / bot 加入的群→成员」级联多选装配（见下方 @ 对象选择）
 // - 媒体段(图片/视频/语音)的资源路径只能经「浏览目录」选择确定：不提供手填输入框，
 //   回显只读；上传、新建目录、删除都在选择树内完成
 // ============================================================================
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   UploadOutlined,
   FolderOpenOutlined,
   FolderAddOutlined,
   DeleteOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue'
 import FileSystemApi from '@/api/fileSystem'
-import type { FsNode } from '@/api/types'
+import GroupListenApi from '@/api/groupListen'
+import type { FsNode, GroupMemberNode, JoinedGroupNode } from '@/api/types'
 import type { MessageSegment, MessageSegmentType } from '../types'
 
 /** 外部双向绑定的消息段数组 */
@@ -32,6 +35,8 @@ interface FieldDef {
   textarea?: boolean
   /** 资源路径字段: 只读回显, 只能通过目录浏览树选择目录或具体文件 */
   isPath?: boolean
+  /** @ 对象字段: 用级联多选装配, 结果按逗号写回 qq */
+  isAt?: boolean
 }
 /** 段类型的展示与字段配置 */
 interface SegmentMeta {
@@ -50,10 +55,8 @@ const SEGMENT_META: Record<MessageSegmentType, SegmentMeta> = {
   at: {
     label: '@某人',
     color: 'purple',
-    fields: [
-      { key: 'qq', label: 'QQ 号', placeholder: '数字 QQ 号；填 all 表示 @全体' },
-      { key: 'name', label: '昵称', placeholder: '可选，仅展示用' },
-    ],
+    // @ 对象经级联多选挑选（发送者 / 加入群的成员），可一次选多个
+    fields: [{ key: 'qq', label: '@对象', isAt: true }],
   },
   image: {
     label: '图片',
@@ -151,11 +154,192 @@ function onFieldInput(index: number, key: keyof MessageSegment, val: string) {
 }
 
 // --------------------------------------------------------------------------
+// @ 对象选择: 固定项「发送者」+「bot 加入过的群 -> 群成员」级联多选
+// ----------------------------------------------------------------------------
+// 落库形态仍是 at 段的 qq 字段：多个目标以英文逗号分隔，其中「发送者」存 '{{sender}}'
+// 模板（发送时由后端执行上下文解析成触发者 QQ），群成员存其 QQ 号。
+// 一级群来自 /group-listens/joined-groups（一次拉全，带群名与人数），二级成员在展开
+// 某群时才经 /joined-groups/:群号/members 拉取（后端命中成员缓存即秒回）。
+// 级联值需要 [群号, QQ] 两级路径，因此只有成员已加载过的群能把 QQ 反查回所属群；
+// 反查不到的目标（群还没展开过、手填 QQ、历史的 all）以可删除标签继续展示，
+// 展开对应群后标签会自动折叠进级联选中项。
+// --------------------------------------------------------------------------
+const AT_SENDER_TOKEN = '{{sender}}'
+
+/** 一级群节点 + 其成员加载态（loaded 为 false 时 members 为空不代表该群没人） */
+interface JoinedGroupEntry extends JoinedGroupNode {
+  members: GroupMemberNode[]
+  loaded: boolean
+  loading: boolean
+}
+
+/** bot 加入过的群（出现 at 段时拉一次，展开某群才拉它的成员） */
+const atGroups = ref<JoinedGroupEntry[]>([])
+const atGroupsLoaded = ref(false)
+const atGroupsLoading = ref(false)
+
+/** 成员叶子文案：群名片优先，其次昵称，都带上 QQ 号便于确认是同一个人 */
+function toMemberOption(m: GroupMemberNode) {
+  return { value: m.userId, label: `${m.card?.trim() || m.nickname || '未命名'}（${m.userId}）`, isLeaf: true }
+}
+
+/**
+ * 级联选项：固定项「发送者」与群同为一级；群节点只用于导航（禁勾选，避免点群名
+ * 就圈下整群人），未展开时只置 isLeaf=false 交给 loadData 拉成员。
+ */
+const atOptions = computed<any[]>(() => [
+  { value: AT_SENDER_TOKEN, label: '发送者（触发本条消息的人）', isLeaf: true },
+  ...atGroups.value.map((g) => ({
+    value: g.groupId,
+    label: g.memberCount ? `${g.groupName}（${g.memberCount} 人）` : g.groupName,
+    disableCheckbox: true,
+    isLeaf: false,
+    loading: g.loading,
+    children: g.loaded ? g.members.map(toMemberOption) : undefined,
+  })),
+])
+
+/** 已加载的成员里按 QQ 号反查所属群，得到级联路径；查不到返回 undefined */
+function atPathOf(token: string): string[] | undefined {
+  if (token === AT_SENDER_TOKEN) return [token]
+  const group = atGroups.value.find((g) => g.loaded && g.members.some((m) => m.userId === token))
+  return group ? [group.groupId, token] : undefined
+}
+
+/** at 段 qq 拆成目标列表 */
+function atTokens(seg: MessageSegment): string[] {
+  return (seg.qq || '').split(',').map((t) => t.trim()).filter(Boolean)
+}
+
+/** 级联受控值：只保留能定位到选项的目标 */
+function atValue(seg: MessageSegment): string[][] {
+  return atTokens(seg)
+    .map(atPathOf)
+    .filter((p): p is string[] => !!p)
+}
+
+/** 级联装不下的目标（群未展开/手填 QQ/历史值）：以标签展示，可删除 */
+function atCustomTokens(seg: MessageSegment): string[] {
+  return atTokens(seg).filter((t) => !atPathOf(t))
+}
+
+/** 目标 token 的可读文案（不再提供选项的历史值也显示成中文） */
+function atTokenLabel(token: string): string {
+  if (token === AT_SENDER_TOKEN) return '发送者'
+  if (token === 'all') return '全体'
+  return token
+}
+
+/**
+ * 整体回写目标列表。
+ * 改选即视为重选，顺带清掉旧的展示昵称：qq 与 name 是按位对应的，
+ * 只改 qq 不改 name 会让上一位成员的昵称串到新的 QQ 上。
+ */
+function writeAtTokens(index: number, tokens: string[]) {
+  const arr = [...(segments.value || [])]
+  const next: MessageSegment = { ...arr[index], qq: tokens.join(',') }
+  delete next.name
+  arr[index] = next
+  segments.value = arr
+}
+
+/** 级联多选变更：取每条路径的末级作为目标，标签里的目标原样保留在后面 */
+function onAtChange(index: number, paths: unknown) {
+  const picked = ((Array.isArray(paths) ? paths : []) as unknown[][])
+    .map((p) => String(p[p.length - 1] ?? ''))
+    .filter(Boolean)
+  const seg = segments.value?.[index]
+  writeAtTokens(index, Array.from(new Set([...picked, ...(seg ? atCustomTokens(seg) : [])])))
+}
+
+function removeAtToken(index: number, token: string) {
+  const seg = segments.value?.[index]
+  if (!seg) return
+  writeAtTokens(index, atTokens(seg).filter((t) => t !== token))
+}
+
+/** 「其他 QQ 号」输入草稿（按行隔离，多个 at 段互不串值） */
+const atDraft = ref<Record<number, string>>({})
+
+/** 回车把手填 QQ 追加为 @ 目标（已存在则只清空输入） */
+function addCustomAt(index: number) {
+  const val = (atDraft.value[index] || '').trim()
+  atDraft.value[index] = ''
+  const seg = segments.value?.[index]
+  if (!val || !seg || atTokens(seg).includes(val)) return
+  writeAtTokens(index, [...atTokens(seg), val])
+}
+
+/** 级联搜索：路径上任一层文案命中即保留（群多、成员多时靠搜索定位） */
+const atSearch = {
+  filter: (inputValue: string, path: any[]) =>
+    path.some((o) => String(o.label ?? '').toLowerCase().includes(inputValue.toLowerCase())),
+}
+
+/** 展开某群时加载它的成员（已加载/加载中即跳过，避免重复触发） */
+async function loadAtMembers(groupId: string, refresh = false): Promise<void> {
+  const entry = atGroups.value.find((g) => g.groupId === groupId)
+  if (!entry || entry.loading || (entry.loaded && !refresh)) return
+  entry.loading = true
+  try {
+    const res = await GroupListenApi.groupMembers(groupId, refresh)
+    entry.members = res.data || []
+    entry.loaded = true
+  } catch {
+    // 请求层已提示；保持未加载，下次展开该群可重试
+  } finally {
+    entry.loading = false
+    // 换数组引用：级联 options 依赖新引用才会重算，把新能定位的目标折叠回来
+    atGroups.value = [...atGroups.value]
+  }
+}
+
+/** 级联动态加载：只有一级（群）节点需要拉成员 */
+function onAtLoadData(selectedOptions: any[]): void {
+  const node = selectedOptions?.[0]
+  if (!node || node.value === AT_SENDER_TOKEN) return
+  void loadAtMembers(String(node.value))
+}
+
+/** 拉 bot 加入过的群；force=true 时顺带重拉已展开群的成员 */
+async function loadAtGroups(force = false): Promise<void> {
+  if (atGroupsLoading.value || (atGroupsLoaded.value && !force)) return
+  atGroupsLoading.value = true
+  try {
+    const res = await GroupListenApi.joinedGroups()
+    const prev = new Map(atGroups.value.map((g) => [g.groupId, g]))
+    // 已展开过的群保留成员，刷新不让它退回未加载状态
+    atGroups.value = (res.data || []).map((g) => {
+      const old = prev.get(g.groupId)
+      return { ...g, members: old?.members ?? [], loaded: old?.loaded ?? false, loading: false }
+    })
+    atGroupsLoaded.value = true
+    if (force) {
+      await Promise.all(atGroups.value.filter((g) => g.loaded).map((g) => loadAtMembers(g.groupId, true)))
+      message.success(`已刷新 ${atGroups.value.length} 个加入的群`)
+    }
+  } catch {
+    // 请求层已提示（Bot 未连接最常见），保留旧列表让用户点重试
+  } finally {
+    atGroupsLoading.value = false
+  }
+}
+
+// 打开既有画布时 at 段可能已经存在：先拉一次群列表，成员则按展开逐群加载
+watch(
+  () => segments.value?.some((s) => s.type === 'at'),
+  (hasAt) => {
+    if (hasAt) void loadAtGroups()
+  },
+  { immediate: true },
+)
+
+// --------------------------------------------------------------------------
 // 资源选择: 从服务器目录树中下钻, 既可选中「目录」(发送时随机取), 也可选中
 // 「具体文件」(发送该文件)。文件按当前段的媒体类型做扩展名过滤, 目录始终可展开。
 // 媒体段路径只能经此处确定（回显只读）；路径是目录还是具体文件由底层发送时判断
 // (makeResource 约定: 末段带扩展名视为具体文件, 否则视为目录随机选取)。
-// 树内直接复用目录管理模块的后端接口 (/filesystem/mkdir | upload | delete),
+// 树内直接复用文件系统接口 (/filesystem/mkdir | upload | delete),
 // 因此新建目录、上传素材、删除资源可以在选资源的过程中顺手完成。
 // --------------------------------------------------------------------------
 /** 各媒体段允许选择的文件扩展名 (小写); 未列出的类型不过滤 */
@@ -533,7 +717,7 @@ async function refreshChildrenOf(dirPath: string): Promise<void> {
         <a-tag :color="SEGMENT_META[seg.type] && SEGMENT_META[seg.type].color">
           {{ SEGMENT_META[seg.type] && SEGMENT_META[seg.type].label }}
         </a-tag>
-        <a-select
+        <a-select 
           :value="seg.type"
           size="small"
           style="width: 110px"
@@ -567,6 +751,62 @@ async function refreshChildrenOf(dirPath: string): Promise<void> {
                 {{ PICKER_BUTTON_TEXT }}
               </a-button>
             </template>
+            <!-- @ 对象: 级联多选（发送者 / 加入的群 -> 成员），目标列表写回 qq -->
+            <div v-else-if="f.isAt" class="segment-editor__at">
+              <div class="segment-editor__at-main">
+                <a-cascader
+                  class="segment-editor__at-cascader"
+                  :value="atValue(seg)"
+                  :options="atOptions"
+                  :loading="atGroupsLoading"
+                  :show-search="atSearch"
+                  :load-data="onAtLoadData"
+                  :max-tag-count="2"
+                  multiple
+                  allow-clear
+                  :placeholder="
+                    atGroupsLoaded && !atGroups.length
+                      ? '未取到加入的群（Bot 可能未连接），可点右侧刷新重试或手填 QQ'
+                      : '选择 @ 对象：发送者 / 展开群选成员'
+                  "
+                  @change="onAtChange(i, $event)"
+                />
+                <a-tooltip
+                  :title="
+                    atGroupsLoaded && !atGroups.length
+                      ? '未取到 bot 加入过的群（Bot 未连接或接口失败），点击重试'
+                      : '重新拉取加入的群，并刷新已展开群的成员'
+                  "
+                >
+                  <a-button size="small" :loading="atGroupsLoading" @click="loadAtGroups(true)">
+                    <ReloadOutlined />
+                  </a-button>
+                </a-tooltip>
+              </div>
+              <!-- 群未展开过或手填的目标：单独可删，并保留手填入口 -->
+              <div class="segment-editor__at-extra">
+                <a-tag
+                  v-for="t in atCustomTokens(seg)"
+                  :key="t"
+                  color="purple"
+                  closable
+                  @close="removeAtToken(i, t)"
+                >
+                  @{{ atTokenLabel(t) }}
+                </a-tag>
+                <a-input
+                  v-model:value="atDraft[i]"
+                  size="small"
+                  class="segment-editor__at-custom"
+                  placeholder="其他 QQ 号，回车加入"
+                  @press-enter="addCustomAt(i)"
+                />
+              </div>
+              <!-- 说明运行期的群过滤，避免配置者以为选了就一定发得出 @ -->
+              <div class="segment-editor__at-tip">
+                发送时按当前群过滤：私聊不发 @，不在本群的成员自动丢弃；@发送者始终有效
+              </div>
+            </div>
             <a-textarea
               v-else-if="f.textarea"
               :value="segValue(seg, f.key)"
@@ -744,6 +984,42 @@ async function refreshChildrenOf(dirPath: string): Promise<void> {
 
   &__add {
     margin-top: @spacing-xs;
+  }
+
+  // @ 对象：级联多选 + 刷新按钮，下方一行放自定义 QQ 标签与手填入口
+  &__at {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__at-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  &__at-cascader {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__at-extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  &__at-custom {
+    flex: 0 0 auto;
+    width: 150px;
+  }
+
+  &__at-tip {
+    margin-top: 4px;
+    color: @text-color-secondary;
+    font-size: 12px;
   }
 
   &__picker-tip {

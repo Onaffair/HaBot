@@ -1,8 +1,8 @@
-import { get, post, put, del } from './request'
+import { get, post, del } from './request'
 import type { FsNode } from './types'
 
 // ============================================================================
-// 服务器目录浏览 & 默认管理目录 设置 API
+// 服务器目录浏览 API（资源以文件系统路径为唯一标识，无数据库登记）
 // 文件上传/新建子目录属于对服务器文件系统的写操作，统一走 /filesystem 前缀
 // ============================================================================
 
@@ -32,11 +32,6 @@ class FileSystemApi {
     return get<string>('/filesystem/project-root')
   }
 
-  /** 默认管理目录节点（用于打开对话框时定位） */
-  static defaultTree(path: string) {
-    return get<FsNode | null>('/filesystem/default-tree', { path })
-  }
-
   /** 在父目录下新建子目录 */
   static mkdir(path: string, name: string) {
     return post<{ path: string }>('/filesystem/mkdir', { path, name })
@@ -58,16 +53,4 @@ class FileSystemApi {
   }
 }
 
-/** 默认管理目录（资源设置） */
-class ResourceSettingApi {
-  static getDefaultDir() {
-    return get<string | null>('/resource-settings/default-dir')
-  }
-
-  static setDefaultDir(path: string) {
-    return put<string>('/resource-settings/default-dir', { path })
-  }
-}
-
-export { ResourceSettingApi }
 export default FileSystemApi

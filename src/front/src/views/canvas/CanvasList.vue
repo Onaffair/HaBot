@@ -6,6 +6,7 @@
 // - 搜索 / 翻页 / 改页长均由 useTable 的 watch 自动触发请求
 // - 点击画布名称或「打开」进入画布编辑器 (/canvas/:id)
 // - 新建画布成功后直接进入编辑；重命名 / 启停 / 删除在列表内完成并做局部更新
+// - 「日志」按行打开流转日志弹窗（子组件 v-if 挂载，打开时才发请求）
 // ============================================================================
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -13,6 +14,7 @@ import { message } from 'ant-design-vue'
 import { useTable } from '@/composible/useTable'
 import { CanvasApi } from '@/api'
 import type { CanvasBrief } from '@/api/types'
+import CanvasLogModal from './CanvasLogModal.vue'
 
 const router = useRouter()
 
@@ -29,7 +31,7 @@ const columns = [
   { title: '连线', dataIndex: 'edgeCount', key: 'edgeCount', width: 70 },
   { title: '状态', dataIndex: 'enabled', key: 'enabled', width: 90 },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 170 },
-  { title: '操作', key: 'actions', width: 150 },
+  { title: '操作', key: 'actions', width: 220 },
 ]
 
 /** 分页切换：写回 useTable 的 pagination 触发请求 */
@@ -122,6 +124,20 @@ async function onDelete(record: CanvasBrief) {
   pagination.total = Math.max(0, pagination.total - 1)
   message.success('删除成功')
 }
+
+// --------------------------------------------------------------------------
+// 流转日志弹窗
+// --------------------------------------------------------------------------
+const logVisible = ref(false)
+/** 目标画布（0 表示未选中，配合 v-if 让弹窗子组件按需挂载才拉数据） */
+const logCanvasId = ref(0)
+const logCanvasName = ref('')
+
+function openLog(record: CanvasBrief) {
+  logCanvasId.value = record.id
+  logCanvasName.value = record.name
+  logVisible.value = true
+}
 </script>
 
 <template>
@@ -173,9 +189,10 @@ async function onDelete(record: CanvasBrief) {
           {{ formatTime(record.updatedAt) }}
         </template>
         <template v-else-if="column.key === 'actions'">
-          <a-space>
+          <a-space :size="0">
             <a-button size="small" type="link" @click="openCanvas(record)">打开</a-button>
             <a-button size="small" type="link" @click="openRename(record)">重命名</a-button>
+            <a-button size="small" type="link" @click="openLog(record)">日志</a-button>
             <a-popconfirm title="删除后不可恢复，确认？" ok-text="删除" @confirm="onDelete(record)">
               <a-button size="small" type="link" danger>删除</a-button>
             </a-popconfirm>
@@ -204,6 +221,14 @@ async function onDelete(record: CanvasBrief) {
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 流转日志弹窗：v-if 挂载，打开时才请求该画布的日志，关闭即卸载 -->
+    <canvas-log-modal
+      v-if="logVisible && logCanvasId"
+      v-model:open="logVisible"
+      :canvas-id="logCanvasId"
+      :canvas-name="logCanvasName"
+    />
   </div>
 </template>
 

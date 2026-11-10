@@ -28,52 +28,10 @@ model UserBlacklist {
   @@map("user_blacklist")
 }
 
-// ========== 文件夹管理：资源段 ==========
-// 每条记录对应一个"资源段"，直接记录本地资源的完整目录路径
-model ManagedResource {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // 资源名称
-  path        String   // 资源所在完整目录路径
-  keywords    String   @default("[]") // 触发关键词，JSON 数组字符串，如 ["原神","甘雨"]
-  description String? // 资源描述
-  enabled     Boolean  @default(true) // 是否启用
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("managed_resources")
-}
-
-// ========== 文件夹管理：全局设置（键值对） ==========
-// 用于存储"默认管理目录"等系统级配置
-model ResourceSetting {
-  id    Int    @id @default(autoincrement())
-  key   String @unique // 如 defaultDir
-  value String // 目录路径
-
-  @@map("resource_settings")
-}
-
-// ========== 触发规则（自定义命令） ==========
-// 用于配置非"关键词泛化"的特殊触发命令（哈个气/音乐/你不是我兄弟等），
-// 支持不同的匹配方式，并可从数据库动态注册到命令系统。
-model CommandRule {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique // 命令名，如 "哈个气"
-  description  String? // 命令描述
-  enabled      Boolean  @default(true) // 是否启用
-  // 匹配方式：exact=文本完全等于任一关键词 / contains=文本包含任一关键词子串 / chars=任一关键词的每个字都出现在文本中
-  matchType    String   @default("contains") @map("match_type") // 'exact' | 'contains' | 'chars'
-  keywords     String   @default("[]") // 触发关键词，JSON 数组字符串
-  // 发送资源来源：指向 managed_resources 中某个资源段的 name（如 voice_haqi / music / brother）
-  resourceName String   @map("resource_name")
-  // 可选：在资源目录内按文件名包含该子串过滤到特定文件（如 "你不是我兄弟"）
-  fileFilter   String?  @map("file_filter")
-  priority     Int      @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  @@map("command_rules")
-}
+// ========== 目录管理（managed_resources / resource_settings）与触发规则（command_rules）已移除 ==========
+// 两者的能力全部由下方「流程画布」承载：一条规则 = 一张「触发 → 消息 → 输出」画布，
+// 资源本身以文件系统路径直接引用（bot/utils/resourcePath），不再做数据库登记。
+// 存量数据由 scripts/migrateManagedToCanvas.ts 在删表前迁移完成。
 
 // ========== 流程画布 ==========
 // 存储前端 vue-flow 画布：节点与连线以 JSON 数组字符串落库（与 keywords 字段同风格），
@@ -90,6 +48,51 @@ model Canvas {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("canvases")
+}
+
+// ========== 画布流转日志 ==========
+// 规则引擎每完成一次画布流转写一行，供前端「画布日志」分页回溯：
+// 命中了什么消息、在哪个群、是否发送成功，异常时 error 保存失败节点信息。
+model CanvasFlowLog {
+  id        Int      @id @default(autoincrement())
+  canvasId  Int      @map("canvas_id") // 所属画布（canvases.id，不做外键约束，删画布时由服务层清理）
+  groupId   String   @default("") @map("group_id") // 群号；私聊为空串
+  message   String   @default("") // 触发流转的消息文本（纯文本段拼接）
+  status    String   @default("success") // 'success' | 'error'（error=流转过程中有节点异常）
+  error     String? // 异常摘要：失败节点与原因，多个以分号连接
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([canvasId, createdAt])
+  @@map("canvas_flow_logs")
+}
+
+// ========== AI 人格提示词 ==========
+// 对话机器人（aiChat）的系统人格：name 唯一，prompt 为提示词全文；
+// isActive 标记当前生效人格，全表最多一条为 true（互斥由服务层保证）。
+model AiPersona {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // 人格名称
+  prompt    String // 提示词（系统人格全文）
+  isActive  Boolean  @default(false) @map("is_active") // 是否为当前生效人格
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_personas")
+}
+
+// ========== 用户数字画像 ==========
+// 一次 AI 对话循环结束后，另起一个请求把会话内容交给 AI 总结，
+// 生成针对某个 QQ 用户的画像（性格/兴趣/说话风格/关注话题/关键事实等），
+// 供后续「记忆」功能使用（记忆功能本身暂不实现）。按 qq 唯一，upsert 覆盖。
+model UserProfile {
+  id        Int      @id @default(autoincrement())
+  qq        String   @unique // 用户 QQ 号
+  nickname  String   @default("") // 最近一次见到的昵称/群名片
+  profile   String   @default("") // AI 生成的数字画像总结
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
 }
 
 // ========== 系统配置（键值对，由前端管理页面编辑） ==========

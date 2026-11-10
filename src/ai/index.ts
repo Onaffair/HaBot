@@ -1,5 +1,6 @@
 // 导入所有 AI 平台策略模块，触发自注册
 import './strategy/openai'
+import './strategy/deepseek'
 import './strategy/zhipuImage'
 import './strategy/fishAudio'
 

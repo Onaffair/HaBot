@@ -55,8 +55,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { TeamOutlined, FolderOpenOutlined, UserDeleteOutlined } from '@ant-design/icons-vue'
-import { GroupListenApi, ManagedResourceApi, UserBlacklistApi, BotControlApi } from '@/api'
+import { TeamOutlined, PartitionOutlined, UserDeleteOutlined } from '@ant-design/icons-vue'
+import { GroupListenApi, CanvasApi, UserBlacklistApi, BotControlApi } from '@/api'
 
 interface StatCard {
   title: string
@@ -67,7 +67,7 @@ interface StatCard {
 
 const statsCards = ref<StatCard[]>([
   { title: '监听群组', value: 0, icon: TeamOutlined, color: '#1677ff' },
-  { title: '目录资源', value: 0, icon: FolderOpenOutlined, color: '#52c41a' },
+  { title: '流程画布', value: 0, icon: PartitionOutlined, color: '#52c41a' },
   { title: '黑名单用户', value: 0, icon: UserDeleteOutlined, color: '#ff4d4f' },
 ])
 
@@ -135,13 +135,14 @@ async function handleBotRestart() {
 onMounted(async () => {
   refreshBotStatus()
   try {
-    const [groups, resources, blacklist] = await Promise.all([
+    const [groups, canvases, blacklist] = await Promise.all([
       GroupListenApi.list(),
-      ManagedResourceApi.list(),
+      // 只需要总数，取最小分页；画布接口为顶层 { list, total } 结构，无 data 包装
+      CanvasApi.list({ pageNum: 1, pageSize: 1 }),
       UserBlacklistApi.list(),
     ])
     statsCards.value[0].value = groups.data?.length || 0
-    statsCards.value[1].value = resources.data?.length || 0
+    statsCards.value[1].value = canvases?.total || 0
     statsCards.value[2].value = blacklist.data?.length || 0
   } catch {
     /* 拦截器已弹错，此处忽略 */

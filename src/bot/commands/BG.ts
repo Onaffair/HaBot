@@ -1,5 +1,5 @@
 import { Command } from "@/core/command";
-import { MessageBuilder } from "@/utils/message";
+import { MessageBuilder } from "@/utils/messageBuilder";
 import { BeanFactory } from '@/core/bean';
 import { createLogger } from "@/utils/logger";
 

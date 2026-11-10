@@ -1,12 +1,11 @@
 import { Express } from 'express';
 import { createGroupListenRoutes } from './groupListen';
 import { createUserBlacklistRoutes } from './userBlacklist';
-import { createManagedResourceRoutes } from './managedResource';
 import { createFileSystemRoutes } from './fileSystem';
-import { createCommandRuleRoutes } from './commandRule';
 import { createCanvasRoutes } from './canvas';
 import { createBotControlRoutes } from './botControl';
 import { createSystemConfigRoutes } from './systemConfig';
+import { createAiPersonaRoutes } from './aiPersona';
 
 export function registerRoutes(app: Express) {
   app.get('/api/health', (_req, res) => {
@@ -15,10 +14,9 @@ export function registerRoutes(app: Express) {
 
   createGroupListenRoutes(app);
   createUserBlacklistRoutes(app);
-  createManagedResourceRoutes(app);
   createFileSystemRoutes(app);
-  createCommandRuleRoutes(app);
   createCanvasRoutes(app);
   createBotControlRoutes(app);
   createSystemConfigRoutes(app);
+  createAiPersonaRoutes(app);
 }

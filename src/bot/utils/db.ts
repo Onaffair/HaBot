@@ -55,29 +55,29 @@ class DatabaseService {
     return this.prisma?.userBlacklist
   }
 
-  /** Typed delegate: managed_resources 表操作 */
-  get managedResource() {
-    return this.prisma?.managedResource
-  }
-
-  /** Typed delegate: resource_settings 表操作 */
-  get resourceSetting() {
-    return this.prisma?.resourceSetting
-  }
-
-  /** Typed delegate: command_rules 表操作 */
-  get commandRule() {
-    return this.prisma?.commandRule
-  }
-
   /** Typed delegate: canvases 表操作 */
   get canvas() {
     return this.prisma?.canvas
   }
 
+  /** Typed delegate: canvas_flow_logs 表操作 */
+  get canvasFlowLog() {
+    return this.prisma?.canvasFlowLog
+  }
+
   /** Typed delegate: system_configs 表操作 */
   get systemConfig() {
     return this.prisma?.systemConfig
+  }
+
+  /** Typed delegate: ai_personas 表操作 */
+  get aiPersona() {
+    return this.prisma?.aiPersona
+  }
+
+  /** Typed delegate: user_profiles 表操作 */
+  get userProfile() {
+    return this.prisma?.userProfile
   }
 }
 export default DatabaseService;

@@ -21,7 +21,7 @@ class AddOneCmd implements Command {
 
     // 去重：同一群内相同内容触发过一次后，一段时间内不再重复 +1（防止机器人自身回声连环触发）
     const messageHash = groupId.toString().concat(`-${JSON.stringify(message)}`)
-    if (redis.get(messageHash)) return false
+    if (redis.get(messageHash)) return false 
 
     // 连续判定：与「上一条群消息」完全一致才触发。
     // 上一条消息由 groupMessageTrace 过滤器统一记录，不受本命令是否被高优先级命令提前命中影响

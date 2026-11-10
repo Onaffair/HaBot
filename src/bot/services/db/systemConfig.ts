@@ -47,9 +47,14 @@ const SEEDS: Array<{
   { key: 'ZHIPUAI_BASE_URL', envKey: 'ZHIPUAI_BASE_URL', defaultValue: 'https://open.bigmodel.cn/api/paas/v4/images/generations', category: 'ai', label: '智谱 Base URL', sortOrder: 4 },
   { key: 'FISHAUDIO_API_KEY', envKey: 'FISHAUDIO_API_KEY', category: 'ai', label: 'Fish Audio API Key', type: 'password', sortOrder: 5 },
   { key: 'FISHAUDIO_BASE_URL', envKey: 'FISHAUDIO_BASE_URL', defaultValue: 'https://api.fish.audio/v1/tts', category: 'ai', label: 'Fish Audio Base URL', sortOrder: 6 },
+  { key: 'DEEPSEEK_API_KEY', envKey: 'DEEPSEEK_API_KEY', category: 'ai', label: 'DeepSeek API Key', type: 'password', sortOrder: 7 },
+  { key: 'DEEPSEEK_BASE_URL', envKey: 'DEEPSEEK_BASE_URL', defaultValue: 'https://api.deepseek.com/chat/completions', category: 'ai', label: 'DeepSeek Base URL', sortOrder: 8 },
+  { key: 'DEEPSEEK_SEARCH_BASE_URL', envKey: 'DEEPSEEK_SEARCH_BASE_URL', defaultValue: 'https://api.deepseek.com/v1/tools/search', category: 'ai', label: 'DeepSeek 搜索 Base URL', sortOrder: 9 },
   // --- AI 全局代理（原 Fish Audio 专用代理升级为全局） ---
   { key: 'AI_PROXY_HOST', fallbackEnvKeys: ['FISHAUDIO_PROXY_HOST'], category: 'ai', label: 'AI 全局代理地址', description: '留空表示不使用代理', defaultValue: '', sortOrder: 10 },
   { key: 'AI_PROXY_PORT', fallbackEnvKeys: ['FISHAUDIO_PROXY_PORT'], category: 'ai', label: 'AI 全局代理端口', type: 'number', defaultValue: '7897', sortOrder: 11 },
+  // --- 爬虫抓取 ---
+  { key: 'DOUYIN_COOKIE', envKey: 'DOUYIN_COOKIE', category: 'spider', label: '抖音 Cookie', type: 'password', description: '抓取抖音视频遇风控时填写，留空表示匿名请求', sortOrder: 1 },
 ]
 
 /**

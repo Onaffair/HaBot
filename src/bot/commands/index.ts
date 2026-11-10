@@ -9,6 +9,7 @@ import { haqiCmd } from './haqi2sb'
 import { yinjiCmd, eatCmd } from './reactions'
 import { videoDownloaderCmd } from './videoLinkDownloader'
 import { webScreenshotCmd } from './webScreenshot'
+import { switchPersonaCmd } from './switchPersona'
 // import { maodieCmd } from './menu' // 菜单命令：暂不启用（沿用原黑名单意图），需要时取消注释并注册
 
 /**
@@ -23,6 +24,7 @@ const commands: Command[] = [
   haqiCmd,
   yinjiCmd,
   eatCmd,
+  switchPersonaCmd,
   videoDownloaderCmd,
   webScreenshotCmd,
 ]

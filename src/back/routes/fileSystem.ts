@@ -4,11 +4,12 @@ import multer from 'multer';
 import { Express, Request, Response } from 'express';
 import os from 'os';
 import { listDirectories, listEntries, FsNode } from '../../bot/utils/fsBrowser';
-import { runtime } from '../../bot/core/runtime';
 
 /**
  * 服务器目录浏览 / 目录与资源文件管理接口。
  * 出于安全考虑默认仅暴露目录枚举，新增目录、上传文件等写操作需落点到存在的目录内。
+ * 资源由消费方按文件系统路径实时解析（bot/utils/resourcePath），
+ * 因此这里的增删改无需回写任何运行态缓存。
  */
 export function createFileSystemRoutes(app: Express) {
   const prefix = '/api/filesystem';
@@ -64,7 +65,7 @@ export function createFileSystemRoutes(app: Express) {
     }
   });
 
-  // 获取目录树的初始候选根（默认管理目录 + 用户主目录）
+  // 获取目录树的初始候选根（用户主目录 + 磁盘根）
   app.get(`${prefix}/roots`, (_req: Request, res: Response) => {
     try {
       const roots: FsNode[] = [
@@ -95,25 +96,6 @@ export function createFileSystemRoutes(app: Express) {
     }
   });
 
-  // 在默认管理目录基础上探测：返回默认目录及其层级（若已配置）
-  app.get(`${prefix}/default-tree`, (req: Request, res: Response) => {
-    try {
-      const defaultDir = (req.query.path as string) || '';
-      if (!defaultDir || !fs.existsSync(defaultDir)) {
-        return res.json({ success: true, data: null });
-      }
-      const node: FsNode = {
-        key: defaultDir,
-        label: defaultDir.split(/[\\/]/).pop() || defaultDir,
-        path: defaultDir,
-        isDir: true,
-      };
-      res.json({ success: true, data: node });
-    } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message });
-    }
-  });
-
   // ========== 写入：新建目录 ==========
 
   /**
@@ -136,8 +118,6 @@ export function createFileSystemRoutes(app: Express) {
         return res.status(400).json({ success: false, message: `目录已存在: ${newDir}` });
       }
       fs.mkdirSync(newDir, { recursive: false });
-      // 后端直接操作运行态：命中某资源目录则重扫其 children
-      void runtime.rescanUnderPath(newDir);
       res.json({ success: true, data: { path: newDir } });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -179,10 +159,6 @@ export function createFileSystemRoutes(app: Express) {
         return res.status(400).json({ success: false, message: '未接收到任何文件' });
       }
       const uploaded = files.map((f) => f.path);
-      // 后端直接操作运行态：把新文件纳入命中的资源目录 children
-      for (const filePath of uploaded) {
-        void runtime.rescanUnderPath(filePath);
-      }
       res.json({ success: true, data: { files: uploaded } });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });
@@ -196,7 +172,7 @@ export function createFileSystemRoutes(app: Express) {
    * query: path=待删除的绝对路径。
    * 安全约束：只允许删除文件与「空目录」，非空目录一律拒绝，避免递归误删整片素材库。
    */
-  app.delete(`${prefix}/delete`, async (req: Request, res: Response) => {
+  app.delete(`${prefix}/delete`, (req: Request, res: Response) => {
     try {
       const target = decodeURIComponent((req.query.path as string) || '');
       if (!target) {
@@ -214,8 +190,6 @@ export function createFileSystemRoutes(app: Express) {
       } else {
         fs.unlinkSync(target);
       }
-      // 以父目录为重扫落点：删除后该目录下 children 需要失效
-      await runtime.rescanUnderPath(path.dirname(target));
       res.json({ success: true, data: { path: target } });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message });

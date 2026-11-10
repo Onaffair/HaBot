@@ -120,9 +120,14 @@ export interface MessageSegment {
   type: MessageSegmentType
   /** text 段内容 */
   text?: string
-  /** at 段目标 QQ 号 ('all' 表示 @全体) */
+  /**
+   * at 段目标：多个 @ 对象以英文逗号分隔。
+   * 取值为群成员 QQ 号或 '{{sender}}'（@发送者，发送时由后端解析为触发者 QQ）；
+   * 选择器不再提供 @全体，但历史值 'all' 仍会被后端原样发给 OneBot。
+   * 发送时后端按当前会话的群过滤：私聊（群号为空）不发 @，不在本群的成员目标丢弃。
+   */
   qq?: string
-  /** at 段显示昵称 (可选, 仅展示用) */
+  /** at 段显示昵称 (可选, 仅展示用；多目标时按位与 qq 对应) */
   name?: string
   /** image / video / record 段的资源路径: 末段带扩展名视为具体文件, 否则为目录 (发送时随机选取) */
   file?: string

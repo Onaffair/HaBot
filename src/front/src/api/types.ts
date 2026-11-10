@@ -24,39 +24,29 @@ export interface GroupListen {
   enabled: boolean
 }
 
+/** bot 加入过的群（画布 @ 对象级联的一级菜单，成员按需再拉） */
+export interface JoinedGroupNode {
+  groupId: string
+  groupName: string
+  /** 群人数，取不到时为 0（仅用于展示） */
+  memberCount: number
+}
+
+/** 群成员（画布消息节点挑选 @ 对象用，级联二级菜单） */
+export interface GroupMemberNode {
+  /** QQ 号（字符串形式） */
+  userId: string
+  nickname: string
+  /** 群名片，优先于昵称展示 */
+  card?: string
+}
+
 /** 用户黑名单 */
 export interface UserBlacklist {
   id: number
   qq: string
   reason?: string
   createdAt: string
-}
-
-/** 资源段（受管目录） */
-export interface ManagedResource {
-  id: number
-  name: string
-  path: string
-  keywords: string[]
-  description?: string | null
-  enabled: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-/** 触发规则 */
-export interface CommandRule {
-  id: number
-  name: string
-  description?: string | null
-  enabled: boolean
-  matchType: 'exact' | 'contains' | 'chars'
-  keywords: string[]
-  resourceName: string
-  fileFilter?: string | null
-  priority: number
-  createdAt: string
-  updatedAt: string
 }
 
 /** 目录树节点 */
@@ -67,27 +57,6 @@ export interface FsNode {
   isDir: boolean
   children?: FsNode[]
   leaf?: boolean
-}
-
-/** 资源段创建/更新载荷 */
-export interface ManagedResourcePayload {
-  name: string
-  path: string
-  keywords: string[]
-  description?: string
-  enabled?: boolean
-}
-
-/** 触发规则创建/更新载荷 */
-export interface CommandRulePayload {
-  name: string
-  description?: string
-  enabled?: boolean
-  matchType: 'exact' | 'contains' | 'chars'
-  keywords: string[]
-  resourceName: string
-  fileFilter?: string
-  priority?: number
 }
 
 // ============================================================================
@@ -129,6 +98,31 @@ export interface CanvasPayload {
   nodes?: Record<string, any>[]
   edges?: Record<string, any>[]
   viewport?: { x: number; y: number; zoom: number } | null
+}
+
+/** 画布流转状态：success=节点全部执行正常，error=存在节点异常（详情见 error） */
+export type FlowLogStatus = 'success' | 'error'
+
+/** 单条画布流转日志（规则引擎每次流转写一行） */
+export interface CanvasFlowLog {
+  id: number
+  canvasId: number
+  /** 群号，私聊触发时为空串 */
+  groupId: string
+  /** 触发流转的消息文本 */
+  message: string
+  status: FlowLogStatus
+  /** 异常摘要「节点名(类型): 原因」，正常为空 */
+  error?: string | null
+  createdAt: string
+}
+
+/** 流转日志分页响应：同 CanvasPage，顶层 { list, total } */
+export interface CanvasFlowLogPage {
+  list: CanvasFlowLog[]
+  total: number
+  pageNum: number
+  pageSize: number
 }
 
 // ============================================================================

@@ -1,5 +1,5 @@
 import { Command } from "@/core/command";
-import { MessageBuilder, makeResource } from "@/utils/message";
+import { MessageBuilder, makeResource } from "@/utils/messageBuilder";
 import { createLogger } from "@utils/logger";
 import { foodArr } from "@/config";
 import { Redis } from "@/utils/redis";
@@ -7,13 +7,14 @@ import { Redis } from "@/utils/redis";
 const logger = createLogger('Reactions');
 
 // ======================================================================
-// 动态注册说明：
-//  - 资源段命令（managed_resources）：由 beans/resource 初始化时经
-//    core/runtime.applyResources() 注册。
-//  - 触发规则命令（command_rules）：由单进程入口 src/index.ts 调用
-//    core/runtime.applyRules() 注册。
-//  bot 与后端同进程，运行期后端改库后直接调用 core/runtime（runtime.upsertResource
-//  / upsertRule / refreshGroups / rescanUnderPath）同步命令与数据，无跨进程通知。
+// 配置化行为说明：
+//  「关键词/正则 → 发送资源」这类可由运营配置的行为已全部改由流程画布表达
+//  （见 commands/canvasFlow 与 views/canvas），原「目录管理」(managed_resources)
+//  与「触发规则」(command_rules) 模块已移除，不再注册任何动态命令。
+//  bot 与后端同进程，运行期后端改库后直接调用 core/runtime（runtime.upsertCanvas /
+//  refreshGroups）同步画布缓存与群数据，无跨进程通知。
+// 资源引用一律走文件系统路径：相对值以 RESOURCE_PATH 为基准，实时解析、无需刷新缓存
+// （见 utils/resourcePath），故本文件的 makeResource('bluelock') 指向 RESOURCE_PATH/bluelock。
 // 本文件仅保留需 @成员 / Redis 状态机等复合行为的硬编码命令。
 // ======================================================================
 
